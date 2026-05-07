@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_26_dual_style_ir_spread,C:\Users\lzx\Desktop\研一下\量化\Project\data\stock1800_px,2017-01-01,2,20,2303,0.0,0.0,,-0.11133808011909292,-0.49113148081665703,0.11133808011909292,0.49113148081665703,,

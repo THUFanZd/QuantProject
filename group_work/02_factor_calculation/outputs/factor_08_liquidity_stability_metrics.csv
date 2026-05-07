@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_08_liquidity_stability,C:\Users\lzx\Desktop\研一下\量化\Project\data\stock1800_px,2017-01-01,2,20,2153,0.9986666666666667,0.24213374848218308,1.6310254335937318,0.0972451087639566,1.5360781604720262,0.1448886397182265,1.643935462693671,0.015199477267488234,1.6368004861235852

@@ -1,0 +1,13 @@
+.claude/
+__pycache__/
+extract_*.py
+rollout-*
+final_extract.py
+analyze_jsonl.py
+check_*.py
+test*.py
+convert_data.py
+*记录.txt
+/data
+实战因子365/
+*对话记录.txt
