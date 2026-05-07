@@ -12,7 +12,7 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FEATURE_DIR = PROJECT_ROOT / "code" / "stock1800"
-COURSE_DATA_DIR = Path(r"C:\Users\lzx\Desktop\研一下\量化\课程资料（中证1000）\stock1000\data")
+COURSE_DATA_DIR = PROJECT_ROOT / "data_1800" / "stock1000" / "data"
 if str(FEATURE_DIR) not in sys.path:
     sys.path.insert(0, str(FEATURE_DIR))
 
@@ -33,7 +33,7 @@ def read_pickle_bypass(path: Path, n_cols: int | None = None) -> pd.DataFrame:
     """Read pickle file directly using pickletools to bypass version issues.
 
     Handles multiple formats:
-    - Barra style: 2 large blobs (values + dates)
+    - Barra style: 2 blobs (values + dates), dates blob is smaller
     - Matrix combined: 1 large blob (all data together, like net_mf_amount)
     - Matrix per-stock: many small blobs (one per stock, like close.pkl)
     """
@@ -45,19 +45,21 @@ def read_pickle_bypass(path: Path, n_cols: int | None = None) -> pd.DataFrame:
     if len(blobs) == 0:
         raise ValueError(f"Cannot find numeric payloads in {path}")
 
-    # Filter for large blobs (>100KB)
-    large_blobs = [b for b in blobs if len(b) > 100000]
-
-    if len(large_blobs) >= 2 and len(large_blobs[1]) < len(large_blobs[0]) // 100:
-        # Format 1: Barra style - values blob + dates blob
-        values_blob, dates_blob = large_blobs[0], large_blobs[1]
+    # Check if this is Barra style (2 blobs: values + dates)
+    # Values blob is large, dates blob is smaller
+    if len(blobs) >= 2 and len(blobs[1]) < len(blobs[0]) // 100:
+        values_blob, dates_blob = blobs[0], blobs[1]
         n_dates = len(dates_blob) // 8
         values = np.frombuffer(values_blob, dtype="<f8").reshape(n_dates, -1)
         date_us = np.frombuffer(dates_blob, dtype="<i8")
         dates = pd.to_datetime(date_us, unit="us")
+        return pd.DataFrame(values, index=dates)
 
-    elif len(large_blobs) == 1:
-        # Format 2: Single combined blob (like net_mf_amount)
+    # Filter for large blobs (>100KB) for other formats
+    large_blobs = [b for b in blobs if len(b) > 100000]
+
+    if len(large_blobs) == 1:
+        # Single combined blob (like net_mf_amount)
         values_blob = large_blobs[0]
         total_values = len(values_blob) // 8
         if n_cols is not None:
@@ -68,28 +70,28 @@ def read_pickle_bypass(path: Path, n_cols: int | None = None) -> pd.DataFrame:
         values = np.frombuffer(values_blob, dtype="<f8").reshape(n_dates, n_cols)
         # Use approximate date range for CSI1000
         dates = pd.date_range(start="2010-01-04", periods=n_dates, freq="B")
+        return pd.DataFrame(values, index=dates)
 
-    else:
-        # Format 3: Multiple small blobs (one per stock, like close.pkl)
-        from collections import Counter
-        blob_sizes = [len(b) for b in blobs if len(b) > 1000]
-        if not blob_sizes:
-            raise ValueError(f"Cannot parse pickle format in {path}")
+    # Multiple small blobs (one per stock, like close.pkl)
+    from collections import Counter
+    blob_sizes = [len(b) for b in blobs if len(b) > 1000]
+    if not blob_sizes:
+        raise ValueError(f"Cannot parse pickle format in {path}")
 
-        # Most common size is the per-stock data size
-        size_counts = Counter(blob_sizes)
-        common_size = size_counts.most_common(1)[0][0]
+    # Most common size is the per-stock data size
+    size_counts = Counter(blob_sizes)
+    common_size = size_counts.most_common(1)[0][0]
 
-        # Extract blobs with common size
-        stock_blobs = [b for b in blobs if len(b) == common_size]
-        n_dates = common_size // 8
-        n_cols = len(stock_blobs)
+    # Extract blobs with common size
+    stock_blobs = [b for b in blobs if len(b) == common_size]
+    n_dates = common_size // 8
+    n_cols = len(stock_blobs)
 
-        # Stack all stock data as columns
-        values = np.column_stack([
-            np.frombuffer(b, dtype="<f8") for b in stock_blobs
-        ])
-        dates = pd.date_range(start="2010-01-04", periods=n_dates, freq="B")
+    # Stack all stock data as columns
+    values = np.column_stack([
+        np.frombuffer(b, dtype="<f8") for b in stock_blobs
+    ])
+    dates = pd.date_range(start="2010-01-04", periods=n_dates, freq="B")
 
     return pd.DataFrame(values, index=dates)
 
@@ -283,6 +285,17 @@ def factor_13_main_fund_stability(
 
     net_mf_path = COURSE_DATA_DIR / "matrix" / "net_mf_amount.pkl"
     net_mf = read_pickle_bypass(net_mf_path, n_cols=1000)
+
+    # Assign stock codes from idxWgt
+    idxwgt_path = COURSE_DATA_DIR / "idxWgt.csv"
+    idxwgt = pd.read_csv(idxwgt_path, index_col=0, parse_dates=True)
+    net_mf.columns = idxwgt.columns[:len(net_mf.columns)]
+
+    # Align with input data
+    if dt:
+        ref_field = list(dt.values())[0]
+        net_mf = net_mf.reindex(index=ref_field.index, columns=ref_field.columns)
+
     return -ts_Stdev(net_mf, window)
 
 
@@ -298,11 +311,27 @@ def factor_26_dual_style_ir_spread(
     Uses Barra style factors from course data.
     """
 
+    # Load Barra style factors
     beta_path = COURSE_DATA_DIR / "barra" / "style" / "Beta.pkl"
     size_path = COURSE_DATA_DIR / "barra" / "style" / "Size.pkl"
 
     beta = read_pickle_bypass(beta_path)
     size = read_pickle_bypass(size_path)
+
+    # Get stock codes from idxWgt.csv for alignment
+    idxwgt_path = COURSE_DATA_DIR / "idxWgt.csv"
+    idxwgt = pd.read_csv(idxwgt_path, index_col=0, parse_dates=True)
+    stock_codes = idxwgt.columns
+
+    # Assign stock codes as column names
+    beta.columns = stock_codes[:len(beta.columns)]
+    size.columns = stock_codes[:len(size.columns)]
+
+    # Align dates with the input data
+    if dt:
+        ref_field = list(dt.values())[0]
+        beta = beta.reindex(index=ref_field.index, columns=ref_field.columns)
+        size = size.reindex(index=ref_field.index, columns=ref_field.columns)
 
     beta_ir = _ts_ir(beta, window)
     size_ir = _ts_ir(size, window)
@@ -324,23 +353,38 @@ def factor_56_cashflow_price_trend(
         TS_MAX_STD -> ts_Stdev over window
     """
 
+    # Load stock codes from idxWgt
+    idxwgt_path = COURSE_DATA_DIR / "idxWgt.csv"
+    idxwgt = pd.read_csv(idxwgt_path, index_col=0, parse_dates=True)
+    stock_codes = idxwgt.columns.tolist()
+
     # Load data from course materials
     cfr_path = COURSE_DATA_DIR / "finMatrix" / "c_fr_sale_sg.pkl"
     total_mv_path = COURSE_DATA_DIR / "matrix" / "total_mv.pkl"
     adj_close_path = COURSE_DATA_DIR / "matrix" / "adj_close.pkl"
 
-    cfr = read_pickle_bypass(cfr_path, n_cols=1000)
+    cfr = read_pickle_bypass(cfr_path, n_cols=None)  # CFR has only 973 columns
     total_mv = read_pickle_bypass(total_mv_path, n_cols=1000)
     adj_close = read_pickle_bypass(adj_close_path, n_cols=1000)
 
+    # Assign stock codes (CFR has fewer columns, so handle carefully)
+    cfr.columns = stock_codes[:len(cfr.columns)]
+    total_mv.columns = stock_codes[:len(total_mv.columns)]
+    adj_close.columns = stock_codes[:len(adj_close.columns)]
+
     # Cash flow to sales ratio proxy
-    cashofsales = cfr / total_mv.replace(0, np.nan)
+    cashofsales = cfr / total_mv.reindex(columns=cfr.columns).replace(0, np.nan)
 
     # Price volatility component
-    price_vol = ts_Stdev(adj_close, window)
+    price_vol = ts_Stdev(adj_close.reindex(columns=cfr.columns), window)
 
     # Simplified factor: rank of cashofsales minus price volatility
     factor = pn_Rank(cashofsales) - pn_Rank(price_vol)
+
+    # Align with input data
+    if dt:
+        ref_field = list(dt.values())[0]
+        factor = factor.reindex(index=ref_field.index, columns=ref_field.columns)
 
     return factor
 

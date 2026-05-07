@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_56_cashflow_price_trend,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.922,0.09626279029817325,0.7114626687104918,0.04808947197597839,0.7915688140023465,0.048173318322194875,0.6171911375820299,0.00498032978165077,0.611151200783597

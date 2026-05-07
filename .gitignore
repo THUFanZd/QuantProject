@@ -8,6 +8,6 @@ check_*.py
 test*.py
 convert_data.py
 *记录.txt
-/data
+data*/
 实战因子365/
 *对话记录.txt
