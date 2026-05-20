@@ -11,3 +11,16 @@ convert_data.py
 data*/
 实战因子365/
 *对话记录.txt
+# macOS hidden files
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+
+# macOS folder metadata
+.Spotlight-V100
+.Trashes
+
+# Python cache
+__pycache__/
+*.py[cod]

@@ -17,15 +17,30 @@ if str(FEATURE_DIR) not in sys.path:
     sys.path.insert(0, str(FEATURE_DIR))
 
 from feature import (  # noqa: E402
+    Abs,
+    Log,
+    Round,
+    SignedPower,
     pn_CrossResidual,
     pn_Rank,
+    pn_Stand,
+    safe_div,
+    ts_ChgRate,
+    ts_Corr,
     ts_Cov,
+    ts_Decay,
     ts_Delay,
     ts_Delta,
+    ts_EMA,
+    ts_IR,
+    ts_Max,
+    ts_MaxDrawdownAbs,
     ts_Mean,
     ts_Percentage,
+    ts_Rank,
     ts_Stdev,
     ts_Sum,
+    ts_WMA,
 )
 
 
@@ -388,6 +403,345 @@ def factor_56_cashflow_price_trend(
 
     return factor
 
+def _turn_rate(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Construct turnover rate proxy from volume and float shares."""
+    return safe_div(_require_field(dt, "vol") * 100, _require_field(dt, "float_share"))
+
+
+def factor_01_residual_volatility(
+    dt: dict[str, pd.DataFrame],
+    window: int = 20,
+    close_key: str = "close",
+    volume_key: str = "vol",
+) -> pd.DataFrame:
+    """Residual volatility factor.
+
+    Source formula:
+        -TS_STDDEV(CS_REGRESSION(CLOSE, VOLUME, OUT_TYPE=0), 20)
+    """
+
+    close_px = _require_field(dt, close_key)
+    volume = _require_field(dt, volume_key)
+    residual = pn_CrossResidual(close_px, volume)
+    return -ts_Stdev(residual, window)
+
+
+def factor_02_volume_amount_efficiency(
+    dt: dict[str, pd.DataFrame],
+    window: int = 30,
+    volume_key: str = "vol",
+    amount_key: str = "amount",
+) -> pd.DataFrame:
+    """Volume-amount efficiency factor.
+
+    Source formula:
+        RANK(TS_SUM(VOLUME, 30)) / RANK(TS_SUM(AMOUNT, 30))
+    """
+
+    volume = _require_field(dt, volume_key)
+    amount = _require_field(dt, amount_key)
+    return safe_div(pn_Rank(ts_Sum(volume, window)), pn_Rank(ts_Sum(amount, window)))
+
+
+def factor_03_turnover_volatility_momentum(
+    dt: dict[str, pd.DataFrame],
+    turnover_window: int = 14,
+    price_rank_window: int = 30,
+) -> pd.DataFrame:
+    """Turnover-volatility momentum proxy.
+
+    Source formula:
+        -SIGNED_POWER(RANK(TS_STDDEV(TURN_RATE, 14)), 2) * TS_RANK(CLOSE, 30)
+    """
+
+    turnover = _turn_rate(dt)
+    close_px = _require_field(dt, "close")
+    return -SignedPower(pn_Rank(ts_Stdev(turnover, turnover_window)), 2) * ts_Rank(
+        close_px, price_rank_window
+    )
+
+
+def factor_04_reversal_turnover_enhanced(
+    dt: dict[str, pd.DataFrame],
+    window: int = 5,
+) -> pd.DataFrame:
+    """Reversal factor enhanced by turnover proxy.
+
+    Source formula:
+        -(AF_CLOSE / DELAY(AF_CLOSE, 5) * TURN_RATE)
+    """
+
+    adj_close = _require_field(dt, "adj_close")
+    turnover = _turn_rate(dt)
+    return -safe_div(adj_close, ts_Delay(adj_close, window)) * turnover
+
+
+def factor_07_price_volume_deviation_vol(
+    dt: dict[str, pd.DataFrame],
+    window: int = 10,
+) -> pd.DataFrame:
+    """Price-volume deviation volatility factor.
+
+    Source formula:
+        -TS_STDDEV((CLOSE - VWAP) * VOLUME, 10)
+    """
+
+    close_px = _require_field(dt, "close")
+    vwap = _require_field(dt, "vwap")
+    volume = _require_field(dt, "vol")
+    return -ts_Stdev((close_px - vwap) * volume, window)
+
+
+def factor_09_vol_adjusted_reversal(
+    dt: dict[str, pd.DataFrame],
+    window: int = 30,
+) -> pd.DataFrame:
+    """Volatility-adjusted reversal factor.
+
+    Source formula:
+        -TS_MEAN(SIGNEDPOWER(CHANGE_PCT, 2), 30)
+    """
+
+    total_ret = _require_field(dt, "totalRet")
+    return -ts_Mean(SignedPower(total_ret, 2), window)
+
+
+def factor_10_deviation_volume_weighted(
+    dt: dict[str, pd.DataFrame],
+    window: int = 20,
+) -> pd.DataFrame:
+    """Moving-average deviation weighted by volume rank."""
+
+    close_px = _require_field(dt, "close")
+    volume = _require_field(dt, "vol")
+    return (ts_Mean(close_px, window) - close_px) * pn_Rank(volume)
+
+
+def factor_12_turnover_volatility(
+    dt: dict[str, pd.DataFrame],
+    window: int = 15,
+) -> pd.DataFrame:
+    """Negative turnover volatility proxy."""
+
+    return -ts_Stdev(_turn_rate(dt), window)
+
+
+def factor_14_main_fund_peak_reverse_rank(
+    dt: dict[str, pd.DataFrame],
+    window: int = 10,
+) -> pd.DataFrame:
+    """Reverse rank of recent peak main fund inflow."""
+
+    net_mf = _require_field(dt, "net_mf_amount")
+    return -pn_Rank(ts_Max(net_mf, window))
+
+
+def factor_15_multi_dimensional_reversal(
+    dt: dict[str, pd.DataFrame],
+    window: int = 20,
+) -> pd.DataFrame:
+    """Multi-dimensional reversal proxy using price, volume and turnover."""
+
+    close_px = _require_field(dt, "close")
+    volume = _require_field(dt, "vol")
+    turnover = _turn_rate(dt)
+    price_strength = pn_Rank(safe_div(close_px, ts_Mean(close_px, window)))
+    volume_strength = pn_Rank(ts_Mean(volume, window))
+    turnover_strength = pn_Rank(ts_Mean(turnover, window))
+    return -price_strength * volume_strength * turnover_strength
+
+
+def factor_16_price_volume_volatility_negative(
+    dt: dict[str, pd.DataFrame],
+    window: int = 10,
+) -> pd.DataFrame:
+    """Negative price-volume volatility co-movement factor."""
+
+    close_px = _require_field(dt, "close")
+    volume = _require_field(dt, "vol")
+    return -pn_Rank(ts_Stdev(close_px, window)) * pn_Rank(ts_Stdev(volume, window))
+
+
+def factor_17_price_fund_volatility_negative(
+    dt: dict[str, pd.DataFrame],
+    window: int = 10,
+) -> pd.DataFrame:
+    """Negative price and fund-flow volatility co-movement proxy."""
+
+    close_px = _require_field(dt, "close")
+    net_mf = _require_field(dt, "net_mf_amount")
+    return -pn_Rank(ts_Stdev(close_px, window)) * pn_Rank(ts_Stdev(net_mf, window))
+
+
+def factor_19_price_momentum_fund_volatility_reverse(
+    dt: dict[str, pd.DataFrame],
+    window: int = 15,
+) -> pd.DataFrame:
+    """Reverse coupling between price momentum and fund-flow volatility."""
+
+    adj_close = _require_field(dt, "adj_close")
+    net_mf = _require_field(dt, "net_mf_amount")
+    price_mom = pn_Rank(safe_div(adj_close, ts_Delay(adj_close, window)))
+    fund_vol = pn_Rank(ts_Stdev(net_mf, window))
+    return -price_mom * fund_vol
+
+
+def factor_22_rank_momentum_reversal(
+    dt: dict[str, pd.DataFrame],
+    window: int = 40,
+) -> pd.DataFrame:
+    """Rank momentum reversal factor."""
+
+    adj_close = _require_field(dt, "adj_close")
+    return -ts_Sum(ts_Delta(pn_Rank(adj_close), 1), window)
+
+
+def factor_28_main_elg_flow_synergy(
+    dt: dict[str, pd.DataFrame],
+    main_window: int = 20,
+    pct_window: int = 30,
+    decay_window: int = 15,
+) -> pd.DataFrame:
+    """Main and extra-large order flow synergy proxy."""
+
+    net_mf = _require_field(dt, "net_mf_amount")
+    buy_elg = _require_field(dt, "buy_elg_vol")
+    sell_elg = _require_field(dt, "sell_elg_vol")
+    elg_net = buy_elg - sell_elg
+    return pn_Rank(ts_Percentage(ts_Sum(net_mf, main_window), pct_window) * ts_Decay(elg_net, decay_window))
+
+
+def factor_31_main_elg_flow_rank_diff_decay(
+    dt: dict[str, pd.DataFrame],
+    main_window: int = 20,
+    decay_window: int = 15,
+) -> pd.DataFrame:
+    """Decayed rank difference between main fund flow and extra-large order flow."""
+
+    net_mf = _require_field(dt, "net_mf_amount")
+    buy_elg = _require_field(dt, "buy_elg_vol")
+    sell_elg = _require_field(dt, "sell_elg_vol")
+    elg_net = buy_elg - sell_elg
+    return ts_Decay(Abs(pn_Rank(ts_Sum(net_mf, main_window))) - Abs(pn_Rank(elg_net)), decay_window)
+
+
+def factor_36_short_vol_adjusted_return(
+    dt: dict[str, pd.DataFrame],
+    window: int = 15,
+) -> pd.DataFrame:
+    """Short-term volatility-adjusted return factor."""
+
+    close_px = _require_field(dt, "close")
+    open_px = _require_field(dt, "open")
+    return -pn_Rank(ts_Sum(close_px - open_px, window)) * pn_Rank(ts_Stdev(close_px, window))
+
+
+def factor_37_volume_stable_close(
+    dt: dict[str, pd.DataFrame],
+    window: int = 10,
+) -> pd.DataFrame:
+    """Volume preference adjusted by close-price stability."""
+
+    volume = _require_field(dt, "vol")
+    close_px = _require_field(dt, "close")
+    return pn_Rank(volume) * (1 - pn_Rank(ts_Stdev(close_px, window)))
+
+
+def factor_39_reverse_price_volume_rank(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Reverse product of close-price rank and volume rank."""
+
+    close_px = _require_field(dt, "close")
+    volume = _require_field(dt, "vol")
+    return -pn_Rank(close_px) * pn_Rank(volume)
+
+
+def factor_40_fund_flow_max_drawdown(
+    dt: dict[str, pd.DataFrame],
+    window: int = 15,
+) -> pd.DataFrame:
+    """Negative rolling maximum drawdown of fund flow."""
+
+    net_mf = _require_field(dt, "net_mf_amount")
+    return -ts_MaxDrawdownAbs(net_mf, window)
+
+
+def factor_43_turnover_relative_strength_reversal(
+    dt: dict[str, pd.DataFrame],
+    short_window: int = 20,
+    long_window: int = 120,
+) -> pd.DataFrame:
+    """Turnover relative strength reversal proxy."""
+
+    turnover = _turn_rate(dt)
+    return -safe_div(ts_Mean(turnover, short_window), ts_Mean(turnover, long_window))
+
+
+def factor_44_volume_divergence_composite_momentum(
+    dt: dict[str, pd.DataFrame],
+    mean_window: int = 15,
+    corr_window: int = 10,
+) -> pd.DataFrame:
+    """Composite price-volume divergence momentum proxy."""
+
+    close_px = _require_field(dt, "close")
+    volume = _require_field(dt, "vol")
+    total_ret = _require_field(dt, "totalRet")
+    turnover = _turn_rate(dt)
+    corr_part = pn_Rank(ts_Corr(pn_Rank(ts_Mean(close_px, mean_window)), pn_Rank(ts_Mean(volume, mean_window)), corr_window))
+    ret_part = pn_Rank(ts_Mean(total_ret, mean_window))
+    turnover_part = pn_Rank(ts_Mean(turnover, mean_window))
+    volume_part = pn_Rank(ts_Mean(volume, mean_window))
+    return -corr_part * ret_part * turnover_part * volume_part
+
+
+def factor_48_turnover_adjusted_abnormal_price_momentum(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Turnover-adjusted abnormal price momentum proxy."""
+
+    adj_close = _require_field(dt, "adj_close")
+    turnover = _turn_rate(dt)
+    x = -safe_div(1, turnover)
+    residual = pn_CrossResidual(adj_close, x)
+    return -pn_Rank(Log(1 + Abs(residual)))
+
+
+def factor_49_volatility_trend_composite(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Volatility trend composite proxy."""
+
+    close_px = _require_field(dt, "close")
+    total_ret = _require_field(dt, "totalRet")
+    trend = Round(safe_div(ts_EMA(close_px, 10), ts_Mean(close_px, 5)))
+    vol_spread = ts_Stdev(total_ret, 120) - ts_Stdev(total_ret, 20)
+    ir_spread = ts_IR(total_ret, 120) - ts_IR(total_ret, 20)
+    return trend * vol_spread + ir_spread
+
+
+def factor_50_reverse_standardized_decay_volume_price(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Reverse standardized maximum decayed volume-price composite proxy."""
+
+    total_ret = _require_field(dt, "totalRet")
+    volume = _require_field(dt, "vol")
+    raw = ts_Max(ts_Decay(total_ret, 20) * Log(volume + 1), 3)
+    return -pn_Stand(raw)
+
+
+def factor_52_large_outflow_momentum_reversal(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Large-order outflow momentum reversal proxy."""
+
+    turnover = _turn_rate(dt)
+    sell_lg = _require_field(dt, "sell_lg_vol")
+    # proxy for second-order momentum over 60 days
+    second_mom = ts_Delta(ts_Delta(sell_lg, 30), 30)
+    return -(turnover + second_mom)
 
 FACTOR_REGISTRY = {
     "factor_05_volume_price_divergence_cov": factor_05_volume_price_divergence_cov,
@@ -401,3 +755,32 @@ FACTOR_REGISTRY = {
     "factor_42_adjusted_price_reversal": factor_42_adjusted_price_reversal,
     "factor_56_cashflow_price_trend": factor_56_cashflow_price_trend,
 }
+
+FACTOR_REGISTRY.update({
+    "factor_01_residual_volatility": factor_01_residual_volatility,
+    "factor_02_volume_amount_efficiency": factor_02_volume_amount_efficiency,
+    "factor_03_turnover_volatility_momentum": factor_03_turnover_volatility_momentum,
+    "factor_04_reversal_turnover_enhanced": factor_04_reversal_turnover_enhanced,
+    "factor_07_price_volume_deviation_vol": factor_07_price_volume_deviation_vol,
+    "factor_09_vol_adjusted_reversal": factor_09_vol_adjusted_reversal,
+    "factor_10_deviation_volume_weighted": factor_10_deviation_volume_weighted,
+    "factor_12_turnover_volatility": factor_12_turnover_volatility,
+    "factor_14_main_fund_peak_reverse_rank": factor_14_main_fund_peak_reverse_rank,
+    "factor_15_multi_dimensional_reversal": factor_15_multi_dimensional_reversal,
+    "factor_16_price_volume_volatility_negative": factor_16_price_volume_volatility_negative,
+    "factor_17_price_fund_volatility_negative": factor_17_price_fund_volatility_negative,
+    "factor_19_price_momentum_fund_volatility_reverse": factor_19_price_momentum_fund_volatility_reverse,
+    "factor_22_rank_momentum_reversal": factor_22_rank_momentum_reversal,
+    "factor_28_main_elg_flow_synergy": factor_28_main_elg_flow_synergy,
+    "factor_31_main_elg_flow_rank_diff_decay": factor_31_main_elg_flow_rank_diff_decay,
+    "factor_36_short_vol_adjusted_return": factor_36_short_vol_adjusted_return,
+    "factor_37_volume_stable_close": factor_37_volume_stable_close,
+    "factor_39_reverse_price_volume_rank": factor_39_reverse_price_volume_rank,
+    "factor_40_fund_flow_max_drawdown": factor_40_fund_flow_max_drawdown,
+    "factor_43_turnover_relative_strength_reversal": factor_43_turnover_relative_strength_reversal,
+    "factor_44_volume_divergence_composite_momentum": factor_44_volume_divergence_composite_momentum,
+    "factor_48_turnover_adjusted_abnormal_price_momentum": factor_48_turnover_adjusted_abnormal_price_momentum,
+    "factor_49_volatility_trend_composite": factor_49_volatility_trend_composite,
+    "factor_50_reverse_standardized_decay_volume_price": factor_50_reverse_standardized_decay_volume_price,
+    "factor_52_large_outflow_momentum_reversal": factor_52_large_outflow_momentum_reversal,
+})
