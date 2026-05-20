@@ -7,6 +7,9 @@ analyze_jsonl.py
 check_*.py
 test*.py
 convert_data.py
+debug_*.py
+evaluate_factors_all.py
+archive/root_scratch/
 *记录.txt
 data*/
 实战因子365/
