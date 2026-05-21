@@ -128,10 +128,39 @@ def ts_Max(df2, num):                # get the max value of last num trading day
     df = df.rolling(window=num).max()
     return df
 
+
+def ts_TopKSum(df2, window, k):
+    """Rolling sum of the largest k observations in each window."""
+    k = int(k)
+
+    def _topk_sum(arr):
+        arr = arr[~np.isnan(arr)]
+        if len(arr) == 0:
+            return np.nan
+        kk = min(k, len(arr))
+        return np.sort(arr)[-kk:].sum()
+
+    return df2.rolling(window).apply(_topk_sum, raw=True)
+
+
+def ts_MaxMean(df2, window, mean_window):
+    """Rolling max of a shorter rolling mean."""
+    return ts_Max(ts_Mean(df2, mean_window), window)
+
+
+def ts_MaxStd(df2, window, std_window):
+    """Rolling max of a shorter rolling standard deviation."""
+    return ts_Max(ts_Stdev(df2, std_window), window)
+
 def ts_Min(df2, num):             # get the min value of last num trading day  
     df = df2.copy()
     df = df.rolling(window=num).min()
     return df
+
+
+def ts_MinDiff(df2, window):
+    """Latest value minus rolling minimum."""
+    return df2 - ts_Min(df2, window)
 
 def ts_Delta(df2, num):   
     df = df2.copy()
@@ -174,6 +203,71 @@ def ts_Median(df2, num):
     dfCleaned = df2.copy()
     stds = dfCleaned.rolling(window=num).median()
     return stds
+
+
+def ts_AvDiff(df2, window):
+    """Latest value minus rolling mean."""
+    return df2 - ts_Mean(df2, window)
+
+
+def pn_CSPct(df2, q):
+    """Cross-sectional top-quantile indicator for each date."""
+    threshold = df2.quantile(q, axis=1)
+    return df2.ge(threshold, axis=0).astype(float)
+
+
+def pn_CSSkew(df2):
+    """Cross-sectional skewness replicated across columns for each date."""
+    skew = df2.skew(axis=1)
+    return pd.DataFrame(
+        np.repeat(skew.values[:, None], len(df2.columns), axis=1),
+        index=df2.index,
+        columns=df2.columns,
+    )
+
+
+def pn_GroupRank(df2, group):
+    """Cross-sectional percentile rank within each date/group bucket."""
+    out = pd.DataFrame(np.nan, index=df2.index, columns=df2.columns)
+    group_aligned = group.reindex(index=df2.index, columns=df2.columns)
+    for idx in df2.index:
+        values = df2.loc[idx]
+        groups = group_aligned.loc[idx]
+        for _, cols in groups.dropna().groupby(groups.dropna()).groups.items():
+            out.loc[idx, cols] = values.loc[cols].rank(pct=True)
+    return out
+
+
+def pn_GroupStdev(df2, group):
+    """Cross-sectional group standard deviation replicated to group members."""
+    out = pd.DataFrame(np.nan, index=df2.index, columns=df2.columns)
+    group_aligned = group.reindex(index=df2.index, columns=df2.columns)
+    for idx in df2.index:
+        values = df2.loc[idx]
+        groups = group_aligned.loc[idx]
+        for _, cols in groups.dropna().groupby(groups.dropna()).groups.items():
+            out.loc[idx, cols] = values.loc[cols].std()
+    return out
+
+
+def Winsorize(df2, method=1):
+    """Cross-sectional winsorization; method 1 uses median +/- 5.2 MAD."""
+    if method != 1:
+        mean = df2.mean(axis=1)
+        std = df2.std(axis=1).replace(0, np.nan)
+        lower = mean - 3 * std
+        upper = mean + 3 * std
+    else:
+        median = df2.median(axis=1)
+        mad = df2.sub(median, axis=0).abs().median(axis=1).replace(0, np.nan)
+        lower = median - 5.2 * mad
+        upper = median + 5.2 * mad
+    return df2.clip(lower=lower, upper=upper, axis=0)
+
+
+def Sin(df2):
+    """Element-wise sine."""
+    return np.sin(df2)
 
 # more calculator , see df.rolling
 # ===== Stage 1 additional operators =====

@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_52_large_outflow_momentum_reversal,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.943,0.1224271786092317,1.3682895458248674,0.0009074242716359677,0.018954982092682416,0.12151975433759575,1.966693142486904,0.008366777087933359,1.5026987311890587

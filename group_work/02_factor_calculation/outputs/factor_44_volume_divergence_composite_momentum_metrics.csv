@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_44_volume_divergence_composite_momentum,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.929,0.2022979289525913,1.4711317723467336,0.05385208626048504,0.929511794127991,0.14844584269210623,1.7726083970432442,0.011108516988792337,1.3236366981749315

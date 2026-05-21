@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_27_main_elg_flow_diff_decay,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.941,0.18310268013735245,1.7776324186801322,0.04825179305024105,0.8676787256108232,0.1348508870871114,2.0970795546664602,0.010413802053823855,1.6058711107439612

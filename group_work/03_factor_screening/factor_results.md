@@ -1,6 +1,6 @@
 # Stage 2 Factor Screening Results
 
-- Data root: `C:\Users\CXY\Desktop\研一下\量化\课程资料（中证1000）\stock1000\data`
+- Data root: `~\Desktop\研一下\量化\课程资料（中证1000）\stock1000\data`
 - Backtest start date: `2017-01-01`
 - Holding delay: `2`
 - Candidate factors evaluated: 36

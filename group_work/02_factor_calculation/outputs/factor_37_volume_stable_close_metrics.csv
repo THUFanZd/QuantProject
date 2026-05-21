@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_37_volume_stable_close,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,1.0,0.01687384361965854,0.1414057393475808,0.0023344479342567283,0.0400032938218364,0.014539395685401826,0.22164508112767775,0.000909124422826938,0.12422660491642917

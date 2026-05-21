@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_39_reverse_price_volume_rank,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,1.0,0.1966085615025802,1.230365124076162,0.04604162132770027,0.6115880810413441,0.15056694017487998,1.6581801373420946,0.010494448782738842,1.0814953542427432

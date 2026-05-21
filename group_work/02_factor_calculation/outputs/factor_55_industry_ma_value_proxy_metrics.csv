@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_55_industry_ma_value_proxy,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.901,0.1599648471870062,1.0239983466081761,0.04318647140822921,0.6030898010049858,0.11677837577877699,1.2161782084528379,0.009576593835459887,1.0377284993032363

@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_45_log_momentum_reverse_rank,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,1.0,0.10653297508986201,0.7125431975705822,0.014785872055941495,0.2224533838815382,0.09174710303392052,1.0404246598399736,0.006155011207357499,0.6831672189846387

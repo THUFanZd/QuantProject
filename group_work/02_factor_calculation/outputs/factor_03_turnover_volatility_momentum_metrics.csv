@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_03_turnover_volatility_momentum,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.946,0.23067394159067794,1.527941120037349,0.04642186710969748,0.7180960151326213,0.18425207448098044,2.0103942605627547,0.012306174669787963,1.3513602270066942

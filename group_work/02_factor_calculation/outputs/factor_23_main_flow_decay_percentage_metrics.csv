@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_23_main_flow_decay_percentage,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.939,0.06237184970846221,0.9900058609825204,0.03449105431077535,1.0536264193513074,0.027880795397686862,0.8081331924367857,0.004365988231952506,0.9496590865205111

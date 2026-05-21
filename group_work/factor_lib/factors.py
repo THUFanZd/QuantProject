@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pickletools
+from functools import lru_cache
 from pathlib import Path
 import sys
 
@@ -13,6 +14,8 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FEATURE_DIR = PROJECT_ROOT / "code" / "stock1800"
 COURSE_DATA_DIR = PROJECT_ROOT / "data_1800" / "stock1000" / "data"
+MATRIX_DIR = COURSE_DATA_DIR / "matrix"
+FIN_MATRIX_DIR = COURSE_DATA_DIR / "finMatrix"
 if str(FEATURE_DIR) not in sys.path:
     sys.path.insert(0, str(FEATURE_DIR))
 
@@ -20,8 +23,14 @@ from feature import (  # noqa: E402
     Abs,
     Log,
     Round,
+    Sin,
     SignedPower,
+    SignedSqrt,
     pn_CrossResidual,
+    pn_CSPct,
+    pn_CSSkew,
+    pn_GroupRank,
+    pn_GroupStdev,
     pn_Rank,
     pn_Stand,
     safe_div,
@@ -33,14 +42,23 @@ from feature import (  # noqa: E402
     ts_Delta,
     ts_EMA,
     ts_IR,
+    ts_Kurtosis,
     ts_Max,
+    ts_MaxMean,
     ts_MaxDrawdownAbs,
+    ts_MaxStd,
     ts_Mean,
+    ts_Median,
+    ts_Min,
+    ts_MinDiff,
     ts_Percentage,
     ts_Rank,
     ts_Stdev,
     ts_Sum,
+    ts_TopKSum,
     ts_WMA,
+    ts_AvDiff,
+    Winsorize,
 )
 
 
@@ -113,8 +131,50 @@ def read_pickle_bypass(path: Path, n_cols: int | None = None) -> pd.DataFrame:
 
 def _require_field(dt: dict[str, pd.DataFrame], key: str) -> pd.DataFrame:
     if key not in dt:
-        raise KeyError(f"dt is missing required field: {key}")
+        if key == "vwap":
+            dt[key] = safe_div(_require_field(dt, "amount"), _require_field(dt, "vol"))
+        else:
+            dt[key] = _align_to_dt(_load_local_field(key), dt)
     return dt[key]
+
+
+@lru_cache(maxsize=1)
+def _stock_codes() -> tuple[str, ...]:
+    idxwgt_path = COURSE_DATA_DIR / "idxWgt.csv"
+    if not idxwgt_path.exists():
+        return ()
+    idxwgt = pd.read_csv(idxwgt_path, index_col=0, parse_dates=True)
+    return tuple(idxwgt.columns.tolist())
+
+
+@lru_cache(maxsize=None)
+def _load_local_field_cached(key: str) -> pd.DataFrame:
+    for folder, n_cols in ((MATRIX_DIR, 1000), (FIN_MATRIX_DIR, None)):
+        path = folder / f"{key}.pkl"
+        if not path.exists():
+            continue
+        try:
+            frame = pd.read_pickle(path)
+            frame.index = pd.to_datetime(frame.index)
+        except Exception:
+            frame = read_pickle_bypass(path, n_cols=n_cols)
+        frame = frame.sort_index()
+        codes = _stock_codes()
+        if codes and len(frame.columns) <= len(codes):
+            frame.columns = list(codes[: len(frame.columns)])
+        return frame
+    raise FileNotFoundError(f"Cannot find local field {key!r} in matrix or finMatrix")
+
+
+def _load_local_field(key: str) -> pd.DataFrame:
+    return _load_local_field_cached(key).copy()
+
+
+def _align_to_dt(frame: pd.DataFrame, dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    if not dt:
+        return frame
+    ref_field = next(iter(dt.values()))
+    return frame.reindex(index=ref_field.index, columns=ref_field.columns)
 
 
 def factor_42_adjusted_price_reversal(
@@ -298,19 +358,7 @@ def factor_13_main_fund_stability(
         MAIN_IN_FLOW_V2 -> net_mf_amount from course data
     """
 
-    net_mf_path = COURSE_DATA_DIR / "matrix" / "net_mf_amount.pkl"
-    net_mf = read_pickle_bypass(net_mf_path, n_cols=1000)
-
-    # Assign stock codes from idxWgt
-    idxwgt_path = COURSE_DATA_DIR / "idxWgt.csv"
-    idxwgt = pd.read_csv(idxwgt_path, index_col=0, parse_dates=True)
-    net_mf.columns = idxwgt.columns[:len(net_mf.columns)]
-
-    # Align with input data
-    if dt:
-        ref_field = list(dt.values())[0]
-        net_mf = net_mf.reindex(index=ref_field.index, columns=ref_field.columns)
-
+    net_mf = _require_field(dt, "net_mf_amount")
     return -ts_Stdev(net_mf, window)
 
 
@@ -368,44 +416,56 @@ def factor_56_cashflow_price_trend(
         TS_MAX_STD -> ts_Stdev over window
     """
 
-    # Load stock codes from idxWgt
-    idxwgt_path = COURSE_DATA_DIR / "idxWgt.csv"
-    idxwgt = pd.read_csv(idxwgt_path, index_col=0, parse_dates=True)
-    stock_codes = idxwgt.columns.tolist()
-
-    # Load data from course materials
-    cfr_path = COURSE_DATA_DIR / "finMatrix" / "c_fr_sale_sg.pkl"
-    total_mv_path = COURSE_DATA_DIR / "matrix" / "total_mv.pkl"
-    adj_close_path = COURSE_DATA_DIR / "matrix" / "adj_close.pkl"
-
-    cfr = read_pickle_bypass(cfr_path, n_cols=None)  # CFR has only 973 columns
-    total_mv = read_pickle_bypass(total_mv_path, n_cols=1000)
-    adj_close = read_pickle_bypass(adj_close_path, n_cols=1000)
-
-    # Assign stock codes (CFR has fewer columns, so handle carefully)
-    cfr.columns = stock_codes[:len(cfr.columns)]
-    total_mv.columns = stock_codes[:len(total_mv.columns)]
-    adj_close.columns = stock_codes[:len(adj_close.columns)]
-
-    # Cash flow to sales ratio proxy
-    cashofsales = cfr / total_mv.reindex(columns=cfr.columns).replace(0, np.nan)
-
-    # Price volatility component
-    price_vol = ts_Stdev(adj_close.reindex(columns=cfr.columns), window)
-
-    # Simplified factor: rank of cashofsales minus price volatility
-    factor = pn_Rank(cashofsales) - pn_Rank(price_vol)
-
-    # Align with input data
-    if dt:
-        ref_field = list(dt.values())[0]
-        factor = factor.reindex(index=ref_field.index, columns=ref_field.columns)
-
-    return factor
+    cashofsales = safe_div(_require_field(dt, "c_fr_sale_sg"), _require_field(dt, "total_mv"))
+    price_vol = ts_Stdev(_require_field(dt, "adj_close"), window)
+    return pn_Rank(cashofsales) - pn_Rank(price_vol)
 
 def _turn_rate(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
-    """Construct turnover rate proxy from volume and float shares."""
+    """Use local turnover when available, otherwise construct a turnover proxy."""
+
+    for key in ("turnover_rate", "turnover_rate_f"):
+        try:
+            return _require_field(dt, key)
+        except (FileNotFoundError, KeyError):
+            continue
     return safe_div(_require_field(dt, "vol") * 100, _require_field(dt, "float_share"))
+
+
+def _main_flow_20d(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Proxy MAIN_IN_FLOW_20D_V2 with 20-day sum of local main net fund flow."""
+
+    return ts_Sum(_require_field(dt, "net_mf_amount"), 20)
+
+
+def _elg_net_amount(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Proxy SLARGE_IN_FLOW_V2 with extra-large buy amount minus sell amount."""
+
+    return _require_field(dt, "buy_elg_amount") - _require_field(dt, "sell_elg_amount")
+
+
+def _lg_net_amount(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Proxy large-order net fund flow with large buy amount minus sell amount."""
+
+    return _require_field(dt, "buy_lg_amount") - _require_field(dt, "sell_lg_amount")
+
+
+def _vroc_12d(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Proxy FACTOR_VROC12D with 12-day volume change rate."""
+
+    return ts_ChgRate(_require_field(dt, "vol"), 12)
+
+
+def _tvsd_20d(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Proxy FACTOR_TVSD20D with 20-day close-volume residual volatility."""
+
+    residual = pn_CrossResidual(_require_field(dt, "close"), _require_field(dt, "vol"))
+    return ts_Stdev(residual, 20)
+
+
+def _volatility_60d(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Proxy FACTOR_VOL60D in risk-volatility contexts with 60-day return stdev."""
+
+    return ts_Stdev(_require_field(dt, "totalRet"), 60)
 
 
 def factor_01_residual_volatility(
@@ -573,6 +633,36 @@ def factor_17_price_fund_volatility_negative(
     return -pn_Rank(ts_Stdev(close_px, window)) * pn_Rank(ts_Stdev(net_mf, window))
 
 
+def factor_11_volatility_turnover_coupling(
+    dt: dict[str, pd.DataFrame],
+    window: int = 15,
+) -> pd.DataFrame:
+    """Volatility-turnover coupling factor.
+
+    Source formula:
+        SCALE(RANK(TS_STDDEV(CLOSE, 15))) * -1 * TURN_RATE
+    """
+
+    close_px = _require_field(dt, "close")
+    return -pn_Stand(pn_Rank(ts_Stdev(close_px, window))) * _turn_rate(dt)
+
+
+def factor_18_price_volume_decay_synergy(
+    dt: dict[str, pd.DataFrame],
+    rank_window: int = 10,
+    vroc_window: int = 12,
+    decay_window: int = 60,
+) -> pd.DataFrame:
+    """Price-volume decay synergy proxy.
+
+    FACTOR_VROC12D is not stored locally, so it is derived from volume change.
+    """
+
+    close_px = _require_field(dt, "close")
+    vroc = ts_ChgRate(_require_field(dt, "vol"), vroc_window)
+    return -ts_Percentage(pn_Rank(close_px), rank_window) * ts_Decay(vroc, decay_window)
+
+
 def factor_19_price_momentum_fund_volatility_reverse(
     dt: dict[str, pd.DataFrame],
     window: int = 15,
@@ -584,6 +674,73 @@ def factor_19_price_momentum_fund_volatility_reverse(
     price_mom = pn_Rank(safe_div(adj_close, ts_Delay(adj_close, window)))
     fund_vol = pn_Rank(ts_Stdev(net_mf, window))
     return -price_mom * fund_vol
+
+
+def factor_20_main_flow_decay(
+    dt: dict[str, pd.DataFrame],
+    decay_window: int = 10,
+) -> pd.DataFrame:
+    """Main-fund-flow decay proxy using local net main fund amount."""
+
+    return ts_Decay(_main_flow_20d(dt), decay_window)
+
+
+def factor_23_main_flow_decay_percentage(
+    dt: dict[str, pd.DataFrame],
+    decay_window: int = 6,
+    pct_window: int = 3,
+) -> pd.DataFrame:
+    """Time-series percentage of decayed main-fund-flow proxy."""
+
+    return ts_Percentage(ts_Decay(_main_flow_20d(dt), decay_window), pct_window)
+
+
+def factor_24_main_elg_flow_diff_decay(
+    dt: dict[str, pd.DataFrame],
+    decay_window: int = 15,
+) -> pd.DataFrame:
+    """Decayed rank of main fund flow minus extra-large order-flow proxy."""
+
+    return ts_Decay(pn_Rank(_main_flow_20d(dt) - _elg_net_amount(dt)), decay_window)
+
+
+def factor_25_main_flow_volatility_momentum(
+    dt: dict[str, pd.DataFrame],
+    pct_window: int = 10,
+) -> pd.DataFrame:
+    """Main-fund-flow percentile coupled with 60-day return volatility."""
+
+    return ts_Percentage(_main_flow_20d(dt), pct_window) * _volatility_60d(dt)
+
+
+def factor_27_main_elg_flow_diff_decay(
+    dt: dict[str, pd.DataFrame],
+    decay_window: int = 5,
+) -> pd.DataFrame:
+    """Difference between decayed main fund flow and extra-large flow proxies."""
+
+    return ts_Decay(_main_flow_20d(dt), decay_window) - ts_Decay(_elg_net_amount(dt), decay_window)
+
+
+def factor_29_main_flow_volatility_decay(
+    dt: dict[str, pd.DataFrame],
+    decay_window: int = 10,
+) -> pd.DataFrame:
+    """Decayed main-fund-flow proxy coupled with 60-day return volatility."""
+
+    return ts_Decay(_main_flow_20d(dt), decay_window) * _volatility_60d(dt)
+
+
+def factor_30_volatility_main_flow_momentum(
+    dt: dict[str, pd.DataFrame],
+    decay_window: int = 10,
+    pct_window: int = 10,
+) -> pd.DataFrame:
+    """Decayed 60-day volatility coupled with main-fund-flow percentile."""
+
+    return ts_Decay(_volatility_60d(dt), decay_window) * ts_Percentage(
+        _main_flow_20d(dt), pct_window
+    )
 
 
 def factor_22_rank_momentum_reversal(
@@ -604,11 +761,10 @@ def factor_28_main_elg_flow_synergy(
 ) -> pd.DataFrame:
     """Main and extra-large order flow synergy proxy."""
 
-    net_mf = _require_field(dt, "net_mf_amount")
-    buy_elg = _require_field(dt, "buy_elg_vol")
-    sell_elg = _require_field(dt, "sell_elg_vol")
-    elg_net = buy_elg - sell_elg
-    return pn_Rank(ts_Percentage(ts_Sum(net_mf, main_window), pct_window) * ts_Decay(elg_net, decay_window))
+    return pn_Rank(
+        ts_Percentage(_main_flow_20d(dt), pct_window)
+        * ts_Decay(_elg_net_amount(dt), decay_window)
+    )
 
 
 def factor_31_main_elg_flow_rank_diff_decay(
@@ -618,11 +774,45 @@ def factor_31_main_elg_flow_rank_diff_decay(
 ) -> pd.DataFrame:
     """Decayed rank difference between main fund flow and extra-large order flow."""
 
-    net_mf = _require_field(dt, "net_mf_amount")
-    buy_elg = _require_field(dt, "buy_elg_vol")
-    sell_elg = _require_field(dt, "sell_elg_vol")
-    elg_net = buy_elg - sell_elg
-    return ts_Decay(Abs(pn_Rank(ts_Sum(net_mf, main_window))) - Abs(pn_Rank(elg_net)), decay_window)
+    return ts_Decay(
+        Abs(pn_Rank(_main_flow_20d(dt))) - Abs(pn_Rank(_elg_net_amount(dt))),
+        decay_window,
+    )
+
+
+def factor_32_momentum_flow_composite(
+    dt: dict[str, pd.DataFrame],
+    decay_window: int = 10,
+) -> pd.DataFrame:
+    """Composite momentum-flow proxy.
+
+    FACTOR_VROC12D is derived from volume change; MAIN_IN_FLOW_20D_V2 uses
+    20-day local main net fund flow.
+    """
+
+    return ts_Decay(_vroc_12d(dt), decay_window) + ts_Decay(_main_flow_20d(dt), decay_window)
+
+
+def factor_33_reinstatement_residual_vol_ratio(
+    dt: dict[str, pd.DataFrame],
+    reinstatement_window: int = 60,
+    stdev_window: int = 35,
+) -> pd.DataFrame:
+    """Proxy for reinstatement-change volatility over residual-volatility ratio."""
+
+    adj_ret = ts_ChgRate(_require_field(dt, "adj_close"), reinstatement_window)
+    return safe_div(ts_Stdev(adj_ret, stdev_window), ts_Stdev(_tvsd_20d(dt), stdev_window))
+
+
+def factor_34_reverse_vroc_rank_vol_cov(
+    dt: dict[str, pd.DataFrame],
+    rank_vol_window: int = 15,
+    cov_window: int = 20,
+) -> pd.DataFrame:
+    """Reverse covariance of volume-change rate and close-rank volatility."""
+
+    close_rank_vol = ts_Stdev(pn_Rank(_require_field(dt, "close")), rank_vol_window)
+    return -ts_Cov(_vroc_12d(dt), close_rank_vol, cov_window)
 
 
 def factor_36_short_vol_adjusted_return(
@@ -696,6 +886,59 @@ def factor_44_volume_divergence_composite_momentum(
     return -corr_part * ret_part * turnover_part * volume_part
 
 
+def factor_45_log_momentum_reverse_rank(
+    dt: dict[str, pd.DataFrame],
+    short_window: int = 15,
+    long_window: int = 252,
+) -> pd.DataFrame:
+    """Reverse rank of logged composite momentum proxy.
+
+    FACTOR_ROCTTM is not stored locally, so 252-day adjusted-close change is
+    used as a long-horizon momentum proxy.
+    """
+
+    close_ret = ts_ChgRate(_require_field(dt, "close"), short_window)
+    roc_ttm_proxy = ts_ChgRate(_require_field(dt, "adj_close"), long_window)
+    return -pn_Rank(pn_Stand(Log(1 + close_ret + roc_ttm_proxy)))
+
+
+def factor_46_price_momentum_decay_reversal(
+    dt: dict[str, pd.DataFrame],
+    window: int = 20,
+    top_k: int = 5,
+) -> pd.DataFrame:
+    """Composite price-momentum decay and reversal factor."""
+
+    close_px = _require_field(dt, "close")
+    high_px = _require_field(dt, "high")
+    location = ts_Rank(close_px, window)
+    spread = ts_TopKSum(high_px, window, top_k) - ts_Median(close_px, window)
+    return -(location * (spread + ts_AvDiff(close_px, window)))
+
+
+def factor_47_nonlinear_volume_price_extreme_reversal(
+    dt: dict[str, pd.DataFrame],
+    poly_window: int = 30,
+    kurt_window: int = 20,
+    kurt_top_window: int = 3,
+) -> pd.DataFrame:
+    """Proxy for nonlinear volume-price extreme reversal.
+
+    The source TS_POLY_REGRESSION output is under-specified, so this uses the
+    rolling close-volume and close-volume-squared correlations as a tractable
+    nonlinear relation proxy.
+    """
+
+    close_px = _require_field(dt, "close")
+    volume = _require_field(dt, "vol")
+    total_ret = _require_field(dt, "totalRet")
+    nonlinear_relation = ts_Corr(close_px, volume, poly_window) + ts_Corr(
+        close_px, volume * volume, poly_window
+    )
+    kurtosis_spike = ts_Max(ts_Kurtosis(total_ret, kurt_window), kurt_top_window)
+    return -((nonlinear_relation + kurtosis_spike) * SignedSqrt(volume))
+
+
 def factor_48_turnover_adjusted_abnormal_price_momentum(
     dt: dict[str, pd.DataFrame],
 ) -> pd.DataFrame:
@@ -732,6 +975,74 @@ def factor_50_reverse_standardized_decay_volume_price(
     return -pn_Stand(raw)
 
 
+def factor_51_nonlinear_price_volume_flow(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Nonlinear price-volume-fund-flow proxy."""
+
+    adj_close = _require_field(dt, "adj_close")
+    returns = safe_div(adj_close, ts_Delay(adj_close, 1)) - 1
+    vwap = _require_field(dt, "vwap")
+    main_flow_10d = ts_Sum(_require_field(dt, "net_mf_amount"), 10)
+    term_flow = (
+        Sin(ts_Mean(returns, 5))
+        * pn_CSSkew(vwap)
+        * ts_Median(main_flow_10d, 20)
+    )
+
+    price_range = _require_field(dt, "adj_high") - _require_field(dt, "adj_low")
+    volume = _require_field(dt, "vol")
+    term_range_volume = Log(1 + ts_MaxStd(price_range, 60, 3)) * safe_div(
+        ts_MaxMean(volume, 20, 5),
+        ts_Mean(volume, 20),
+    )
+    return -(term_flow + term_range_volume)
+
+
+def factor_53_price_flow_cross_quantile(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Price-flow cross-sectional quantile proxy."""
+
+    vwap = _require_field(dt, "vwap")
+    adj_high = _require_field(dt, "adj_high")
+    price_part = ts_MinDiff(vwap + ts_MinDiff(adj_high, 10), 15)
+    institutional_flow = ts_Sum(_lg_net_amount(dt) + _elg_net_amount(dt), 10)
+    flow_part = pn_CSPct(_main_flow_20d(dt) + institutional_flow, 0.8)
+    return -pn_Rank(Round(price_part * flow_part))
+
+
+def factor_54_industry_fund_quality_reverse(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Industry main-fund rank adjusted by profitability-quality proxy."""
+
+    industry = _require_field(dt, "hy")
+    roe_proxy = safe_div(_require_field(dt, "NetProfitTTMQ1"), _require_field(dt, "NetAssetQ1"))
+    roa_proxy = safe_div(_require_field(dt, "NetProfitTTMQ1"), _require_field(dt, "TotalAssetQ1"))
+    quality = roe_proxy - ts_Min(ts_Delta(roa_proxy, 250), 250)
+    return -pn_Rank(pn_GroupRank(_main_flow_20d(dt), industry) - pn_CSPct(quality, 0.5))
+
+
+def factor_55_industry_ma_value_proxy(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Industry-neutral moving-average spread and valuation proxy."""
+
+    close_px = _require_field(dt, "close")
+    industry = _require_field(dt, "hy")
+    bbi = (
+        ts_Mean(close_px, 3)
+        + ts_Mean(close_px, 6)
+        + ts_Mean(close_px, 12)
+        + ts_Mean(close_px, 24)
+    ) / 4
+    ma_gap_dispersion = pn_GroupStdev(bbi - ts_EMA(close_px, 60), industry)
+    price_to_3m_avg = safe_div(close_px, ts_Mean(close_px, 60)) - 1
+    ev_ebitda_proxy = safe_div(_require_field(dt, "total_mv"), _require_field(dt, "ebitda"))
+    return -pn_Rank(ma_gap_dispersion * Winsorize(price_to_3m_avg, 1) + ev_ebitda_proxy)
+
+
 def factor_52_large_outflow_momentum_reversal(
     dt: dict[str, pd.DataFrame],
 ) -> pd.DataFrame:
@@ -764,23 +1075,42 @@ FACTOR_REGISTRY.update({
     "factor_07_price_volume_deviation_vol": factor_07_price_volume_deviation_vol,
     "factor_09_vol_adjusted_reversal": factor_09_vol_adjusted_reversal,
     "factor_10_deviation_volume_weighted": factor_10_deviation_volume_weighted,
+    "factor_11_volatility_turnover_coupling": factor_11_volatility_turnover_coupling,
     "factor_12_turnover_volatility": factor_12_turnover_volatility,
     "factor_14_main_fund_peak_reverse_rank": factor_14_main_fund_peak_reverse_rank,
     "factor_15_multi_dimensional_reversal": factor_15_multi_dimensional_reversal,
     "factor_16_price_volume_volatility_negative": factor_16_price_volume_volatility_negative,
     "factor_17_price_fund_volatility_negative": factor_17_price_fund_volatility_negative,
+    "factor_18_price_volume_decay_synergy": factor_18_price_volume_decay_synergy,
     "factor_19_price_momentum_fund_volatility_reverse": factor_19_price_momentum_fund_volatility_reverse,
+    "factor_20_main_flow_decay": factor_20_main_flow_decay,
     "factor_22_rank_momentum_reversal": factor_22_rank_momentum_reversal,
+    "factor_23_main_flow_decay_percentage": factor_23_main_flow_decay_percentage,
+    "factor_24_main_elg_flow_diff_decay": factor_24_main_elg_flow_diff_decay,
+    "factor_25_main_flow_volatility_momentum": factor_25_main_flow_volatility_momentum,
+    "factor_27_main_elg_flow_diff_decay": factor_27_main_elg_flow_diff_decay,
     "factor_28_main_elg_flow_synergy": factor_28_main_elg_flow_synergy,
+    "factor_29_main_flow_volatility_decay": factor_29_main_flow_volatility_decay,
+    "factor_30_volatility_main_flow_momentum": factor_30_volatility_main_flow_momentum,
     "factor_31_main_elg_flow_rank_diff_decay": factor_31_main_elg_flow_rank_diff_decay,
+    "factor_32_momentum_flow_composite": factor_32_momentum_flow_composite,
+    "factor_33_reinstatement_residual_vol_ratio": factor_33_reinstatement_residual_vol_ratio,
+    "factor_34_reverse_vroc_rank_vol_cov": factor_34_reverse_vroc_rank_vol_cov,
     "factor_36_short_vol_adjusted_return": factor_36_short_vol_adjusted_return,
     "factor_37_volume_stable_close": factor_37_volume_stable_close,
     "factor_39_reverse_price_volume_rank": factor_39_reverse_price_volume_rank,
     "factor_40_fund_flow_max_drawdown": factor_40_fund_flow_max_drawdown,
     "factor_43_turnover_relative_strength_reversal": factor_43_turnover_relative_strength_reversal,
     "factor_44_volume_divergence_composite_momentum": factor_44_volume_divergence_composite_momentum,
+    "factor_45_log_momentum_reverse_rank": factor_45_log_momentum_reverse_rank,
+    "factor_46_price_momentum_decay_reversal": factor_46_price_momentum_decay_reversal,
+    "factor_47_nonlinear_volume_price_extreme_reversal": factor_47_nonlinear_volume_price_extreme_reversal,
     "factor_48_turnover_adjusted_abnormal_price_momentum": factor_48_turnover_adjusted_abnormal_price_momentum,
     "factor_49_volatility_trend_composite": factor_49_volatility_trend_composite,
     "factor_50_reverse_standardized_decay_volume_price": factor_50_reverse_standardized_decay_volume_price,
+    "factor_51_nonlinear_price_volume_flow": factor_51_nonlinear_price_volume_flow,
     "factor_52_large_outflow_momentum_reversal": factor_52_large_outflow_momentum_reversal,
+    "factor_53_price_flow_cross_quantile": factor_53_price_flow_cross_quantile,
+    "factor_54_industry_fund_quality_reverse": factor_54_industry_fund_quality_reverse,
+    "factor_55_industry_ma_value_proxy": factor_55_industry_ma_value_proxy,
 })

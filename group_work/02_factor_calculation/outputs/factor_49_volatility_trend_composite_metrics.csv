@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_49_volatility_trend_composite,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.917,0.06786039572465825,0.519470832184579,-8.467084955069409e-05,-0.001354592239240034,0.06794506657420896,0.9248975832789103,0.004936699375958576,0.6195094400376929

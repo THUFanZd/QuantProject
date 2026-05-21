@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_54_industry_fund_quality_reverse,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.944,-0.10365389617051472,-2.0172001193847104,-0.05176917106910816,-1.7924790813073381,-0.05188472510140656,-1.7871468627182996,-0.006363179946417514,-1.940695560330723

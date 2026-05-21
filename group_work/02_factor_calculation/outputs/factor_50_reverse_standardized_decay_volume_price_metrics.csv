@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_50_reverse_standardized_decay_volume_price,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.994,0.14679756395157148,0.9471774245529013,-0.0017050076654150815,-0.023088703120873896,0.14850257161698655,1.6429939178730268,0.009547280820607486,1.020970381500523

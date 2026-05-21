@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_43_turnover_relative_strength_reversal,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.902,0.18908437612741616,1.5868745717117825,0.05929622285497887,1.1097376396310925,0.12978815327243728,1.748546513000117,0.011796270361753009,1.5832821450808952

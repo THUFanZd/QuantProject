@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_17_price_fund_volatility_negative,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.946,0.23677182504395966,1.4194620523531911,0.09641534555813187,1.3261843452283077,0.14035647948582783,1.433596904090626,0.013275023925193153,1.3055925253301695

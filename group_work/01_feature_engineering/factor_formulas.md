@@ -52,12 +52,41 @@
 
 ---
 
+## 2026-05-21 补充覆盖
+
+本节补充本次全量实现任务中新增实现或归类的源因子。完整测试结果与 metrics 路径见 `group_work/FACTOR_IMPLEMENTATION_PROGRESS.md`。
+
+| Factor ID | Factor Name | Formula | Required Fields | Status | Notes |
+|---|---|---|---|---|---|
+| 11 | 波动换手耦合因子 | `-pn_Stand(pn_Rank(ts_Stdev(dt["close"], 15))) * dt["turnover_rate"]` | `close`, `turnover_rate` | **ready** | 原文 `SCALE(RANK(TS_STDDEV(CLOSE,15))) * -1 * TURN_RATE`，本地有 `turnover_rate`。 |
+| 18 | 量价衰减协同因子 | `-ts_Percentage(pn_Rank(dt["close"]), 10) * ts_Decay(ts_ChgRate(dt["vol"], 12), 60)` | `close`, `vol` | **ready** | `FACTOR_VROC12D` 按源含义由12日成交量变化率派生。 |
+| 20 | 资金流入线性衰减因子 | `ts_Decay(ts_Sum(dt["net_mf_amount"], 20), 10)` | `net_mf_amount` | **proxy** | `MAIN_IN_FLOW_20D_V2` 用本地20日主力净流入金额代理。 |
+| 21 | 资金流入动量因子 | blocked | `REINSTATEMENT_CHG_60D`, `MAIN_IN_FLOW_20D_V2` | **no** | `REINSTATEMENT_CHG_60D` 本地无可信等价字段；不强行用价格涨跌替代。 |
+| 23 | 主力流入动量因子 | `ts_Percentage(ts_Decay(ts_Sum(dt["net_mf_amount"], 20), 6), 3)` | `net_mf_amount` | **proxy** | 主力20日流入用 `net_mf_amount` rolling sum 代理。 |
+| 24 | 资金流入线性衰减因子 | `ts_Decay(pn_Rank(ts_Sum(dt["net_mf_amount"], 20) - (dt["buy_elg_amount"] - dt["sell_elg_amount"])), 15)` | `net_mf_amount`, `buy_elg_amount`, `sell_elg_amount` | **proxy** | `SLARGE_IN_FLOW_V2` 用超大单净买入金额代理。 |
+| 25 | 资金流入动量波动因子 | `ts_Percentage(ts_Sum(dt["net_mf_amount"], 20), 10) * ts_Stdev(dt["totalRet"], 60)` | `net_mf_amount`, `totalRet` | **proxy** | `FACTOR_VOL60D` 在该资金流波动场景用60日收益波动率代理。 |
+| 27 | 主力与大单流入差值线性衰减因子 | `ts_Decay(ts_Sum(dt["net_mf_amount"], 20), 5) - ts_Decay(dt["buy_elg_amount"] - dt["sell_elg_amount"], 5)` | `net_mf_amount`, `buy_elg_amount`, `sell_elg_amount` | **proxy** | 主力和超大单资金流均用本地资金流矩阵代理。 |
+| 29 | 资金流入动量波动率因子 | `ts_Decay(ts_Sum(dt["net_mf_amount"], 20), 10) * ts_Stdev(dt["totalRet"], 60)` | `net_mf_amount`, `totalRet` | **proxy** | 资金流衰减项可实现，波动率项用60日收益波动代理。 |
+| 30 | 动量资金流因子 | `ts_Decay(ts_Stdev(dt["totalRet"], 60), 10) * ts_Percentage(ts_Sum(dt["net_mf_amount"], 20), 10)` | `totalRet`, `net_mf_amount` | **proxy** | 复现 `FACTOR_VOL60D` 与主力20日流入强度的乘法结构。 |
+| 32 | 综合动量流动因子 | `ts_Decay(ts_ChgRate(dt["vol"], 12), 10) + ts_Decay(ts_Sum(dt["net_mf_amount"], 20), 10)` | `vol`, `net_mf_amount` | **proxy** | `FACTOR_VROC12D` 可派生，主力流入项用本地资金流代理。 |
+| 33 | 复权价波动率比因子 | `safe_div(ts_Stdev(ts_ChgRate(dt["adj_close"], 60), 35), ts_Stdev(ts_Stdev(pn_CrossResidual(dt["close"], dt["vol"]), 20), 35))` | `adj_close`, `close`, `vol` | **proxy** | `REINSTATEMENT_CHG_60D` 用60日复权价变化率代理，`FACTOR_TVSD20D` 用量价残差波动率代理。 |
+| 34 | 逆向波动率协方差因子 | `-ts_Cov(ts_ChgRate(dt["vol"], 12), ts_Stdev(pn_Rank(dt["close"]), 15), 20)` | `vol`, `close` | **ready** | `FACTOR_VROC12D` 按12日成交量变化率派生，其他字段可直接映射。 |
+| 45 | 对数动量逆向排序因子 | `-pn_Rank(pn_Stand(Log(1 + ts_ChgRate(dt["close"], 15) + ts_ChgRate(dt["adj_close"], 252))))` | `close`, `adj_close` | **proxy** | `FACTOR_ROCTTM` 本地无同名字段，用252日复权价变化率代理。 |
+| 46 | 复合价格动能衰减与反转预期因子 | `-(ts_Rank(dt["close"], 20) * ((ts_TopKSum(dt["high"], 20, 5) - ts_Median(dt["close"], 20)) + ts_AvDiff(dt["close"], 20)))` | `close`, `high` | **ready** | 新增 `ts_TopKSum` 与 `ts_AvDiff` 支持原文 `TS_MAX_SUM` / `TS_AV_DIFF`。 |
+| 47 | 非线性量价极端反转因子 | `-((ts_Corr(dt["close"], dt["vol"], 30) + ts_Corr(dt["close"], dt["vol"] * dt["vol"], 30) + ts_Max(ts_Kurtosis(dt["totalRet"], 20), 3)) * SignedSqrt(dt["vol"]))` | `close`, `vol`, `totalRet` | **proxy** | 原文 `TS_POLY_REGRESSION` 输出语义不清，采用一阶/二阶量价滚动相关作为非线性关系代理。 |
+| 51 | 量价资金非线性因子 | `-(Sin(ts_Mean(dt["adj_close"] / ts_Delay(dt["adj_close"], 1) - 1, 5)) * pn_CSSkew(dt["vwap"]) * ts_Median(ts_Sum(dt["net_mf_amount"], 10), 20) + Log(1 + ts_MaxStd(dt["adj_high"] - dt["adj_low"], 60, 3)) * safe_div(ts_MaxMean(dt["vol"], 20, 5), ts_Mean(dt["vol"], 20)))` | `adj_close`, `vwap`, `net_mf_amount`, `adj_high`, `adj_low`, `vol` | **proxy** | `vwap` 由 `amount / vol` 计算，资金项用本地主力净流入代理。 |
+| 53 | 量价资金流截面分位数因子 | `-pn_Rank(Round(ts_MinDiff(dt["vwap"] + ts_MinDiff(dt["adj_high"], 10), 15) * pn_CSPct(ts_Sum(dt["net_mf_amount"], 20) + ts_Sum((dt["buy_lg_amount"] - dt["sell_lg_amount"]) + (dt["buy_elg_amount"] - dt["sell_elg_amount"]), 10), 0.8)))` | `vwap`, `adj_high`, `net_mf_amount`, `buy_lg_amount`, `sell_lg_amount`, `buy_elg_amount`, `sell_elg_amount` | **proxy** | 机构资金项由大单和超大单净买入金额代理。 |
+| 54 | 反向行业主力资金排序盈利质量调整因子 | `-pn_Rank(pn_GroupRank(ts_Sum(dt["net_mf_amount"], 20), dt["hy"]) - pn_CSPct(safe_div(dt["NetProfitTTMQ1"], dt["NetAssetQ1"]) - ts_Min(ts_Delta(safe_div(dt["NetProfitTTMQ1"], dt["TotalAssetQ1"]), 250), 250), 0.5))` | `net_mf_amount`, `hy`, `NetProfitTTMQ1`, `NetAssetQ1`, `TotalAssetQ1` | **proxy** | 5年ROE/ROA变化字段缺失，用本地TTM/Q1盈利能力矩阵做代理。 |
+| 55 | 行业中性均线价差估值因子 | `-pn_Rank(pn_GroupStdev(((ts_Mean(dt["close"], 3) + ts_Mean(dt["close"], 6) + ts_Mean(dt["close"], 12) + ts_Mean(dt["close"], 24)) / 4) - ts_EMA(dt["close"], 60), dt["hy"]) * Winsorize(safe_div(dt["close"], ts_Mean(dt["close"], 60)) - 1, 1) + safe_div(dt["total_mv"], dt["ebitda"]))` | `close`, `hy`, `total_mv`, `ebitda` | **proxy** | 源文件标题写“大单流出动量反转”，正文实际是行业中性均线价差估值因子；按正文公式实现。 |
+
+---
+
 ## 第一阶段小结
 
-本阶段已完成 36 个候选因子的公式整理，其中：
+本阶段已完成 56 个源因子的公式整理或阻塞归类，其中：
 
 - **ready 因子**：字段基本完全匹配，可优先进入第二阶段批量计算；
 - **proxy 因子**：原文字段本地不存在，但可通过本地字段近似复现；
-- **no 因子**：暂不进入主筛选，主要原因是数据覆盖率不足或字段对齐问题。
+- **no 因子**：暂不进入主筛选，主要原因是数据覆盖率不足、字段对齐问题或当前本地数据无可信替代字段。
 
 建议第二阶段优先测试 `ready` 因子，再从 `proxy` 因子中筛选有效性较高、相关性较低的候选因子。

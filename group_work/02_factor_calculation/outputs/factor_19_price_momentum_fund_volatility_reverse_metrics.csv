@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_19_price_momentum_fund_volatility_reverse,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.946,0.26334821395655045,1.752666698702146,0.08420669295849668,1.3383716857717771,0.17914152099805375,1.9181120039526238,0.016924619641081055,1.899277798744357

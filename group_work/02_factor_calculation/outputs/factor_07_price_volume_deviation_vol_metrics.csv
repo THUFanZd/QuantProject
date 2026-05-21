@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_07_price_volume_deviation_vol,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.946,0.32301525140902837,2.089424947697798,0.1197073986486252,1.8275459321865934,0.2033078527604032,2.1774666369537488,0.019025797498656145,2.030654055688131

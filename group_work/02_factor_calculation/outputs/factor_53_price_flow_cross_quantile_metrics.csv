@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,delay,listed_days,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_53_price_flow_cross_quantile,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2,20,2111,0.946,-0.02013979616269456,-0.18082259318665952,0.0004931413772901998,0.02786942939099318,-0.020632937539984755,-0.2137527840074587,-0.0008101963340944631,-0.14493859888145713
