@@ -1024,6 +1024,103 @@ def factor_54_industry_fund_quality_reverse(
     return -pn_Rank(pn_GroupRank(_main_flow_20d(dt), industry) - pn_CSPct(quality, 0.5))
 
 
+def factor_add_06_quality_x_flow(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Screened add-on factor: profitability quality crossed with main fund flow."""
+
+    quality = pn_Rank(safe_div(_require_field(dt, "NetProfitTTMQ1"), _require_field(dt, "NetAssetQ1")))
+    flow = pn_Rank(_main_flow_20d(dt))
+    return quality * flow
+
+
+def factor_opt_01_residual_volatility_w5(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Optimized 5-day variant of residual volatility for stage-2 screening."""
+
+    return factor_01_residual_volatility(dt, window=5)
+
+
+def factor_opt_01_residual_volatility_w10(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Optimized 10-day variant of residual volatility for stage-2 screening."""
+
+    return factor_01_residual_volatility(dt, window=10)
+
+
+def factor_opt_05_volume_price_divergence_cov_1_20(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Optimized volume-price covariance variant with 1-day deltas and 20-day covariance."""
+
+    return factor_05_volume_price_divergence_cov(dt, delta_window=1, cov_window=20)
+
+
+def factor_opt_07_price_volume_deviation_vol_w15(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Optimized 15-day variant of price-volume deviation volatility."""
+
+    return factor_07_price_volume_deviation_vol(dt, window=15)
+
+
+def factor_opt_13_main_fund_stability_w5(dt: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Optimized 5-day main-fund stability variant."""
+
+    return factor_13_main_fund_stability(dt, window=5)
+
+
+def factor_opt_33_reinstatement_residual_vol_ratio_40_20(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Optimized reinstatement/residual-volatility ratio using 40-day return and 20-day stdev."""
+
+    return factor_33_reinstatement_residual_vol_ratio(
+        dt,
+        reinstatement_window=40,
+        stdev_window=20,
+    )
+
+
+def factor_opt_33_reinstatement_residual_vol_ratio_80_20(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Optimized reinstatement/residual-volatility ratio using 80-day return and 20-day stdev."""
+
+    return factor_33_reinstatement_residual_vol_ratio(
+        dt,
+        reinstatement_window=80,
+        stdev_window=20,
+    )
+
+
+def factor_opt_34_reverse_vroc_rank_vol_cov_5_20(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Optimized reverse VROC/rank-volatility covariance variant."""
+
+    return factor_34_reverse_vroc_rank_vol_cov(dt, rank_vol_window=5, cov_window=20)
+
+
+def factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Optimized nonlinear volume-price extreme reversal variant."""
+
+    return factor_47_nonlinear_volume_price_extreme_reversal(
+        dt,
+        poly_window=30,
+        kurt_window=30,
+        kurt_top_window=5,
+    )
+
+
+def factor_opt_54_industry_fund_quality_reverse_inv(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Direction-adjusted industry fund-quality factor for positive long-short return."""
+
+    return -factor_54_industry_fund_quality_reverse(dt)
+
+
 def factor_55_industry_ma_value_proxy(
     dt: dict[str, pd.DataFrame],
 ) -> pd.DataFrame:
@@ -1112,5 +1209,16 @@ FACTOR_REGISTRY.update({
     "factor_52_large_outflow_momentum_reversal": factor_52_large_outflow_momentum_reversal,
     "factor_53_price_flow_cross_quantile": factor_53_price_flow_cross_quantile,
     "factor_54_industry_fund_quality_reverse": factor_54_industry_fund_quality_reverse,
+    "factor_add_06_quality_x_flow": factor_add_06_quality_x_flow,
+    "factor_opt_01_residual_volatility_w5": factor_opt_01_residual_volatility_w5,
+    "factor_opt_01_residual_volatility_w10": factor_opt_01_residual_volatility_w10,
+    "factor_opt_05_volume_price_divergence_cov_1_20": factor_opt_05_volume_price_divergence_cov_1_20,
+    "factor_opt_07_price_volume_deviation_vol_w15": factor_opt_07_price_volume_deviation_vol_w15,
+    "factor_opt_13_main_fund_stability_w5": factor_opt_13_main_fund_stability_w5,
+    "factor_opt_33_reinstatement_residual_vol_ratio_40_20": factor_opt_33_reinstatement_residual_vol_ratio_40_20,
+    "factor_opt_33_reinstatement_residual_vol_ratio_80_20": factor_opt_33_reinstatement_residual_vol_ratio_80_20,
+    "factor_opt_34_reverse_vroc_rank_vol_cov_5_20": factor_opt_34_reverse_vroc_rank_vol_cov_5_20,
+    "factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5": factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5,
+    "factor_opt_54_industry_fund_quality_reverse_inv": factor_opt_54_industry_fund_quality_reverse_inv,
     "factor_55_industry_ma_value_proxy": factor_55_industry_ma_value_proxy,
 })

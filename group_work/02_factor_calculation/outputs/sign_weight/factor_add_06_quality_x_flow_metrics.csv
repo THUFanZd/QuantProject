@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,end_date,delay,listed_days,ls_method,quantile,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_add_06_quality_x_flow,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2025-02-03,2,20,sign_weight,,2111,0.917,0.16251111030726795,2.008107283949193,0.06219216601364606,1.5992116755383587,0.10031894429362186,2.0294410195316455,0.009254947769414192,1.7967227984457808

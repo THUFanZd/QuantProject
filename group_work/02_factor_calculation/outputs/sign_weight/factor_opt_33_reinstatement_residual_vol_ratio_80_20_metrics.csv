@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,end_date,delay,listed_days,ls_method,quantile,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_opt_33_reinstatement_residual_vol_ratio_80_20,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2025-02-03,2,20,sign_weight,,2111,1.0,0.16531249250253552,2.6137808359520998,0.07703132814550073,2.359971376190615,0.08828116435703474,2.3518284635366444,0.011706025265734315,3.037823731445843

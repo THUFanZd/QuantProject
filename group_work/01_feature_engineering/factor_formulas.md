@@ -81,6 +81,35 @@
 
 ---
 
+## 2026-05-23 新增筛选因子
+
+本节记录从 `main` 分支 `group_work/factor_add/` 实验目录筛出的增强因子，并将其补入正式 `FACTOR_REGISTRY`。
+
+| Registry Key | Factor Name | Formula | Required Fields | Status | Notes |
+|---|---|---|---|---|---|
+| `factor_add_06_quality_x_flow` | 盈利质量 × 主力资金流因子 | `pn_Rank(safe_div(dt["NetProfitTTMQ1"], dt["NetAssetQ1"])) * pn_Rank(ts_Sum(dt["net_mf_amount"], 20))` | `NetProfitTTMQ1`, `NetAssetQ1`, `net_mf_amount` | **screened_addon** | 来自 `factor_add_06_quality_x_flow` 候选实验；保留原 registry key 以便追溯实验结果。 |
+
+---
+
+## 2026-05-23 参数优化达标因子
+
+本节记录为第二阶段 `AR > 10%`、`SR > 2` 目标沉淀到正式 `FACTOR_REGISTRY` 的参数优化版因子。它们都是已有源因子的可复现窗口/方向变体，不改变正式评估口径；完整 metrics、收益序列、图表和复现命令见根目录 `FACTOR_IMPLEMENTATION_PROGRESS.md`。
+
+| Registry Key | Base Factor | Optimized Construction | Status | Evaluation Results | Notes |
+|---|---|---|---|---|---|
+| `factor_opt_01_residual_volatility_w5` | `factor_01_residual_volatility` | `window=5` | **screened_param** | AR: 32.67%, SR: 2.881, ICIR: 2.899 | 残差波动率短窗口版，提升收益稳定性。 |
+| `factor_opt_01_residual_volatility_w10` | `factor_01_residual_volatility` | `window=10` | **screened_param** | AR: 30.15%, SR: 2.536, ICIR: 2.500 | 残差波动率中短窗口版。 |
+| `factor_opt_05_volume_price_divergence_cov_1_20` | `factor_05_volume_price_divergence_cov` | `delta_window=1, cov_window=20` | **screened_param** | AR: 26.64%, SR: 2.104, ICIR: 2.057 | 将协方差窗口从30日缩短到20日。 |
+| `factor_opt_07_price_volume_deviation_vol_w15` | `factor_07_price_volume_deviation_vol` | `window=15` | **screened_param** | AR: 33.25%, SR: 2.128, ICIR: 2.046 | 价量偏离波动率15日窗口版。 |
+| `factor_opt_13_main_fund_stability_w5` | `factor_13_main_fund_stability` | `window=5` | **screened_param** | AR: 29.08%, SR: 2.001, ICIR: 1.961 | 主力资金稳定性短窗口版，SR 刚超过阈值。 |
+| `factor_opt_33_reinstatement_residual_vol_ratio_40_20` | `factor_33_reinstatement_residual_vol_ratio` | `reinstatement_window=40, stdev_window=20` | **screened_param** | AR: 17.13%, SR: 2.553, ICIR: 3.018 | 复权价变化率与量价残差波动比的40/20窗口版。 |
+| `factor_opt_33_reinstatement_residual_vol_ratio_80_20` | `factor_33_reinstatement_residual_vol_ratio` | `reinstatement_window=80, stdev_window=20` | **screened_param** | AR: 16.53%, SR: 2.614, ICIR: 3.038 | 同一结构的80/20窗口版，SR 表现更高。 |
+| `factor_opt_34_reverse_vroc_rank_vol_cov_5_20` | `factor_34_reverse_vroc_rank_vol_cov` | `rank_vol_window=5, cov_window=20` | **screened_param** | AR: 16.82%, SR: 2.345, ICIR: 2.312 | 成交量变化率与价格排名波动协方差短窗口版。 |
+| `factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5` | `factor_47_nonlinear_volume_price_extreme_reversal` | `poly_window=30, kurt_window=30, kurt_top_window=5` | **screened_param** | AR: 19.04%, SR: 2.132, ICIR: 2.333 | 非线性量价关系与收益峰度项的参数优化版。 |
+| `factor_opt_54_industry_fund_quality_reverse_inv` | `factor_54_industry_fund_quality_reverse` | `-factor_54_industry_fund_quality_reverse()` | **screened_param** | AR: 10.75%, SR: 2.085, ICIR: 2.029 | 原方向收益为负，注册反向版本便于直接复现正向多空收益。 |
+
+---
+
 ## 第一阶段小结
 
 本阶段已完成 56 个源因子的公式整理或阻塞归类，其中：

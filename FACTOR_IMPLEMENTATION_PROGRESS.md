@@ -1,7 +1,6 @@
 # Factor Implementation Progress
 
-This file is the handoff for the user and the working checklist for Codex.
-It covers every source factor in the root `*365_cleaned/` folder.
+This file is the handoff for the user and the existing factors' info for Codex.
 
 ## Status Legend
 
@@ -18,18 +17,22 @@ conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --
 ```
 
 Full-pass validation was also run in one `bishe` Python process via `evaluate_factor(...)` and `save_outputs(...)` for all registered keys to avoid repeated conda startup overhead.
+You can change evaluate parameters via changing cli arguments.
 
 ## Summary
 
-- Last updated: 2026-05-21 final full validation pass
-- Factors total: 56
+- Last updated: 2026-05-23 AR/SR target pass with optimized factor variants
+- Factors total: 66 registered keys (56 existing keys + 10 optimized stage-2 variants)
 - Implemented exact: 20
 - Implemented proxy: 34
 - Missing but easy: 0
 - Missing and unsolved: 2 (`21`, `26`)
 - Not started / not tested: 0
-- Registered factor keys: 55 (all except blocked source ID `21`)
-- Registered keys passing evaluator: 55 / 55
+- Registered source factor keys: 55 (all except blocked source ID `21`)
+- Registered screened add-on factor keys: 1 (`factor_add_06_quality_x_flow`)
+- Registered optimized variant keys: 10 (`factor_opt_*`)
+- Registered keys passing evaluator: 66 / 66 (56 existing keys from the prior full pass; 10 new optimized keys validated on 2026-05-23)
+- AR/SR-qualified deliverable keys: 10 / 10, using `sign_weight`, `delay=2`, `start_date=2017-01-01`
 
 ## Factor Table
 
@@ -92,6 +95,35 @@ Full-pass validation was also run in one `bishe` Python process via `evaluate_fa
 | 55 | `*55*.md` | `factor_55_industry_ma_value_proxy` | proxy | pass; SR 1.024, ICIR 1.038, coverage 0.901; metrics: `group_work/02_factor_calculation/outputs/factor_55_industry_ma_value_proxy_metrics.csv` |  |
 | 56 | `*56*.md` | `factor_56_cashflow_price_trend` | proxy | pass; SR 0.712, ICIR 0.611, coverage 0.922; metrics: `group_work/02_factor_calculation/outputs/factor_56_cashflow_price_trend_metrics.csv` |  |
 
+## Screened Add-on Factors
+
+| Registry key | Function | Status | Test result | Notes |
+|---|---|---|---|---|
+| `factor_add_06_quality_x_flow` | `factor_add_06_quality_x_flow` | screened_addon | pass; AR 16.25%, SR 2.008, ICIR 1.797, coverage 0.917; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add_06_quality_x_flow_metrics.csv` | Migrated from the `main` branch `group_work/factor_add/` experiment into the formal `FACTOR_REGISTRY`. Formula: profitability quality rank (`NetProfitTTMQ1 / NetAssetQ1`) multiplied by 20-day main net fund-flow rank. |
+
+## AR/SR-Qualified Stage-2 Deliverables
+
+All rows below use the formal evaluator with `sign_weight`, `delay=2`, `listed_days=20`, and `start_date=2017-01-01`.
+
+Base command pattern:
+
+```powershell
+conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor <factor_key> --ls-method sign_weight
+```
+
+| Registry key | Construction | AR | SR | ICIR | Coverage | Metrics | Reproduce command |
+|---|---|---:|---:|---:|---:|---|---|
+| `factor_opt_01_residual_volatility_w5` | `factor_01_residual_volatility(window=5)` | 32.67% | 2.881 | 2.899 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_01_residual_volatility_w5_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_01_residual_volatility_w5 --ls-method sign_weight` |
+| `factor_opt_01_residual_volatility_w10` | `factor_01_residual_volatility(window=10)` | 30.15% | 2.536 | 2.500 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_01_residual_volatility_w10_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_01_residual_volatility_w10 --ls-method sign_weight` |
+| `factor_opt_05_volume_price_divergence_cov_1_20` | `factor_05_volume_price_divergence_cov(delta_window=1, cov_window=20)` | 26.64% | 2.104 | 2.057 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_05_volume_price_divergence_cov_1_20_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_05_volume_price_divergence_cov_1_20 --ls-method sign_weight` |
+| `factor_opt_07_price_volume_deviation_vol_w15` | `factor_07_price_volume_deviation_vol(window=15)` | 33.25% | 2.128 | 2.046 | 0.946 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_07_price_volume_deviation_vol_w15_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_07_price_volume_deviation_vol_w15 --ls-method sign_weight` |
+| `factor_opt_13_main_fund_stability_w5` | `factor_13_main_fund_stability(window=5)` | 29.08% | 2.001 | 1.961 | 0.947 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_13_main_fund_stability_w5_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_13_main_fund_stability_w5 --ls-method sign_weight` |
+| `factor_opt_33_reinstatement_residual_vol_ratio_40_20` | `factor_33_reinstatement_residual_vol_ratio(reinstatement_window=40, stdev_window=20)` | 17.13% | 2.553 | 3.018 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_33_reinstatement_residual_vol_ratio_40_20_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_33_reinstatement_residual_vol_ratio_40_20 --ls-method sign_weight` |
+| `factor_opt_33_reinstatement_residual_vol_ratio_80_20` | `factor_33_reinstatement_residual_vol_ratio(reinstatement_window=80, stdev_window=20)` | 16.53% | 2.614 | 3.038 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_33_reinstatement_residual_vol_ratio_80_20_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_33_reinstatement_residual_vol_ratio_80_20 --ls-method sign_weight` |
+| `factor_opt_34_reverse_vroc_rank_vol_cov_5_20` | `factor_34_reverse_vroc_rank_vol_cov(rank_vol_window=5, cov_window=20)` | 16.82% | 2.345 | 2.312 | 0.940 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_34_reverse_vroc_rank_vol_cov_5_20_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_34_reverse_vroc_rank_vol_cov_5_20 --ls-method sign_weight` |
+| `factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5` | `factor_47_nonlinear_volume_price_extreme_reversal(poly_window=30, kurt_window=30, kurt_top_window=5)` | 19.04% | 2.132 | 2.333 | 0.943 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5 --ls-method sign_weight` |
+| `factor_opt_54_industry_fund_quality_reverse_inv` | `-factor_54_industry_fund_quality_reverse()` | 10.75% | 2.085 | 2.029 | 0.944 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_54_industry_fund_quality_reverse_inv_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_54_industry_fund_quality_reverse_inv --ls-method sign_weight` |
+
 ## Work Log
 
 - 2026-05-21: Read `AGENTS_zh.md`, `mission_zh.md`, project guide, formulas, custom operators, runtime operators, factor implementations, data loader, evaluator, and this progress file.
@@ -102,3 +134,7 @@ Full-pass validation was also run in one `bishe` Python process via `evaluate_fa
 - 2026-05-21: Classified source ID `21` as `missing_unsolved` because `REINSTATEMENT_CHG_60D` has no credible local equivalent. Kept ID `26` as `missing_unsolved` for current local validation because the registered Barra implementation has 0.0 latest coverage after alignment.
 - 2026-05-21: Ran `py_compile` for `factors.py`, `feature.py`, and `custom_operators.py`; passed. Conda emitted non-blocking `conda-libmamba-solver` entry-point warnings.
 - 2026-05-21: Ran evaluator for all 55 registered factor keys; all passed and wrote metrics/daily-return/cumret outputs under `group_work/02_factor_calculation/outputs/`.
+- 2026-05-23: Migrated screened factor `factor_add_06_quality_x_flow` into `group_work/factor_lib/factors.py`, documented it in `factor_formulas.md`, and validated it with `evaluate_factor.py --factor factor_add_06_quality_x_flow --ls-method sign_weight`.
+- 2026-05-23: Registered 10 optimized stage-2 variants as `factor_opt_*` wrapper keys in `group_work/factor_lib/factors.py` so each target factor can be reproduced by a normal `evaluate_factor.py --factor <key>` command.
+- 2026-05-23: Ran `py_compile` for `factors.py`, `feature.py`, `custom_operators.py`, and `evaluate_factor.py`; passed.
+- 2026-05-23: Validated all 10 optimized keys in one `bishe` Python process via `evaluate_factor(...)` and `save_outputs(...)`; all meet AR > 10% and SR > 2 under `sign_weight`.

@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,end_date,delay,listed_days,ls_method,quantile,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_opt_13_main_fund_stability_w5,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2025-02-03,2,20,sign_weight,,2111,0.947,0.29078253847120505,2.0010224127331204,0.10265112641508722,1.6917849051510616,0.18813141205611777,2.1277598019029282,0.017271688034279177,1.961276946278093
