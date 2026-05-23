@@ -91,6 +91,33 @@
 
 ---
 
+## 2026-05-23 行业中性增强过线因子
+
+本节记录从 `main` 分支 `group_work/factor_add_new/` 补齐的 3 个新增过线因子。它们已沉淀到正式 `FACTOR_REGISTRY`，统一走 `evaluate_factor.py --factor <key>` 口径。
+
+| Registry Key | Base Logic | Formula | Required Fields | Status | Evaluation Results |
+|---|---|---|---|---|---|
+| `factor_add2_adj_05_f34_15_25_industry` | f34 行业中性增强 | `pn_GroupRank(factor_34_reverse_vroc_rank_vol_cov(rank_vol_window=15, cov_window=25), dt["hy"])` | `close`, `vol`, `hy` | **screened_addon** | AR: 11.56%, SR: 2.03 |
+| `factor_add2_adj_07_f18_decay30_industry` | f18 行业中性增强 | `pn_GroupRank(factor_18_price_volume_decay_synergy(rank_window=10, vroc_window=12, decay_window=30), dt["hy"])` | `close`, `vol`, `hy` | **screened_addon** | AR: 15.28%, SR: 2.01 |
+| `factor_add2_adj_04_f34_10_30_industry` | f34 行业中性增强 | `pn_GroupRank(factor_34_reverse_vroc_rank_vol_cov(rank_vol_window=10, cov_window=30), dt["hy"])` | `close`, `vol`, `hy` | **screened_addon** | AR: 11.87%, SR: 2.01 |
+
+---
+
+## 2026-05-24 低相关补充过线因子
+
+本节记录为满足“两两 `|corr| < 0.3` 可选出至少 10 个因子”目标新增的 6 个过线因子。它们覆盖缺口、非流动性、隔夜收益、日内上下行波动差、换手加权收益和慢衰减量价协同，已沉淀到正式 `FACTOR_REGISTRY`。
+
+| Registry Key | Base Logic | Formula | Required Fields | Status | Evaluation Results |
+|---|---|---|---|---|---|
+| `factor_add3_gap_down_3` | 向下跳空缺口 | `ts_Sum(safe_div(dt["high"] - ts_Delay(dt["low"], 1), ts_Delay(dt["low"], 1)).where(dt["high"] < ts_Delay(dt["low"], 1), 0), 3)` | `high`, `low` | **screened_addon** | AR: 49.71%, SR: 3.25 |
+| `factor_add3_overnight_reversal_3_industry_inv` | 隔夜收益行业内方向调整 | `-pn_GroupRank(-ts_Mean(dt["overnightRet"], 3), dt["hy"])` | `overnightRet`, `hy` | **screened_addon** | AR: 15.15%, SR: 2.64 |
+| `factor_add3_intraday_hml_vol_120_industry_inv` | 日内上/下振幅波动差行业内方向调整 | `-pn_GroupRank(ts_Stdev(dt["adj_high"] / ts_Delay(dt["adj_close"], 1) - 1, 120) - ts_Stdev(dt["adj_low"] / ts_Delay(dt["adj_close"], 1) - 1, 120), dt["hy"])` | `adj_high`, `adj_low`, `adj_close`, `hy` | **screened_addon** | AR: 18.57%, SR: 2.61 |
+| `factor_add3_amihud_illiq_10_industry` | Amihud 非流动性行业内排名 | `pn_GroupRank(ts_Mean(Abs(dt["totalRet"]) / dt["amount"], 10), dt["hy"])` | `totalRet`, `amount`, `hy` | **screened_addon** | AR: 22.21%, SR: 2.11 |
+| `factor_add3_turnover_weighted_reversal_20_industry` | 换手加权收益反转行业内排名 | `-pn_GroupRank(ts_Sum(dt["totalRet"] * turnover_rate, 20) / ts_Sum(turnover_rate, 20), dt["hy"])` | `totalRet`, `turnover_rate`, `hy` | **screened_addon** | AR: 20.17%, SR: 2.12 |
+| `factor_add3_f18_decay90_industry` | f18 慢衰减行业中性增强 | `pn_GroupRank(factor_18_price_volume_decay_synergy(rank_window=10, vroc_window=12, decay_window=90), dt["hy"])` | `close`, `vol`, `hy` | **screened_addon** | AR: 15.96%, SR: 2.09 |
+
+---
+
 ## 2026-05-23 参数优化达标因子
 
 本节记录为第二阶段 `AR > 10%`、`SR > 2` 目标沉淀到正式 `FACTOR_REGISTRY` 的参数优化版因子。它们都是已有源因子的可复现窗口/方向变体，不改变正式评估口径；完整 metrics、收益序列、图表和复现命令见根目录 `FACTOR_IMPLEMENTATION_PROGRESS.md`。

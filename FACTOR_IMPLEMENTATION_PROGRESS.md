@@ -21,18 +21,19 @@ You can change evaluate parameters via changing cli arguments.
 
 ## Summary
 
-- Last updated: 2026-05-23 AR/SR target pass with optimized factor variants
-- Factors total: 66 registered keys (56 existing keys + 10 optimized stage-2 variants)
+- Last updated: 2026-05-24 low-correlation target pass with 20 stage-2 deliverable factors
+- Factors total: 75 registered keys (55 source keys + 10 screened add-ons + 10 optimized stage-2 variants)
 - Implemented exact: 20
 - Implemented proxy: 34
 - Missing but easy: 0
 - Missing and unsolved: 2 (`21`, `26`)
 - Not started / not tested: 0
 - Registered source factor keys: 55 (all except blocked source ID `21`)
-- Registered screened add-on factor keys: 1 (`factor_add_06_quality_x_flow`)
+- Registered screened add-on factor keys: 10 (`factor_add_06_quality_x_flow`, 3 `factor_add2_*`, 6 `factor_add3_*`)
 - Registered optimized variant keys: 10 (`factor_opt_*`)
-- Registered keys passing evaluator: 66 / 66 (56 existing keys from the prior full pass; 10 new optimized keys validated on 2026-05-23)
-- AR/SR-qualified deliverable keys: 10 / 10, using `sign_weight`, `delay=2`, `start_date=2017-01-01`
+- Registered keys passing evaluator: 75 / 75 (prior source/add-on/optimized keys plus 6 new `factor_add3_*` keys validated on 2026-05-24)
+- AR/SR-qualified deliverable keys: 20 / 20, using `sign_weight`, `delay=2`, `start_date=2017-01-01`
+- Low-correlation target: pass; among the 20 AR/SR-qualified keys, the largest subset with pairwise `abs(corr) < 0.3` has 11 factors.
 
 ## Factor Table
 
@@ -100,6 +101,15 @@ You can change evaluate parameters via changing cli arguments.
 | Registry key | Function | Status | Test result | Notes |
 |---|---|---|---|---|
 | `factor_add_06_quality_x_flow` | `factor_add_06_quality_x_flow` | screened_addon | pass; AR 16.25%, SR 2.008, ICIR 1.797, coverage 0.917; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add_06_quality_x_flow_metrics.csv` | Migrated from the `main` branch `group_work/factor_add/` experiment into the formal `FACTOR_REGISTRY`. Formula: profitability quality rank (`NetProfitTTMQ1 / NetAssetQ1`) multiplied by 20-day main net fund-flow rank. |
+| `factor_add2_adj_05_f34_15_25_industry` | `factor_add2_adj_05_f34_15_25_industry` | screened_addon | pass; AR 11.56%, SR 2.026, ICIR 1.939, coverage 0.940; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add2_adj_05_f34_15_25_industry_metrics.csv` | Migrated from the `main` branch `group_work/factor_add_new/` experiment into the formal `FACTOR_REGISTRY`. Formula: industry-ranked f34 variant with 15-day close-rank volatility and 25-day VROC covariance. |
+| `factor_add2_adj_07_f18_decay30_industry` | `factor_add2_adj_07_f18_decay30_industry` | screened_addon | pass; AR 15.28%, SR 2.007, ICIR 2.173, coverage 0.949; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add2_adj_07_f18_decay30_industry_metrics.csv` | Migrated from the `main` branch `group_work/factor_add_new/` experiment into the formal `FACTOR_REGISTRY`. Formula: industry-ranked f18 decay variant with 30-day VROC decay. |
+| `factor_add2_adj_04_f34_10_30_industry` | `factor_add2_adj_04_f34_10_30_industry` | screened_addon | pass; AR 11.87%, SR 2.006, ICIR 1.870, coverage 0.938; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add2_adj_04_f34_10_30_industry_metrics.csv` | Migrated from the `main` branch `group_work/factor_add_new/` experiment into the formal `FACTOR_REGISTRY`. Formula: industry-ranked f34 variant with 10-day close-rank volatility and 30-day VROC covariance. |
+| `factor_add3_gap_down_3` | `factor_add3_gap_down_3` | screened_addon | pass; AR 49.71%, SR 3.251, ICIR 2.947, coverage 1.000; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_gap_down_3_metrics.csv` | Added for the low-correlation target. Formula: 3-day sum of negative overnight gap events. |
+| `factor_add3_overnight_reversal_3_industry_inv` | `factor_add3_overnight_reversal_3_industry_inv` | screened_addon | pass; AR 15.15%, SR 2.643, ICIR 2.696, coverage 0.947; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_overnight_reversal_3_industry_inv_metrics.csv` | Added for the low-correlation target. Direction-adjusted industry-ranked 3-day overnight-return signal. |
+| `factor_add3_intraday_hml_vol_120_industry_inv` | `factor_add3_intraday_hml_vol_120_industry_inv` | screened_addon | pass; AR 18.57%, SR 2.605, ICIR 2.724, coverage 1.000; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_intraday_hml_vol_120_industry_inv_metrics.csv` | Added for the low-correlation target. Direction-adjusted industry-ranked spread between upside and downside intraday volatility. |
+| `factor_add3_amihud_illiq_10_industry` | `factor_add3_amihud_illiq_10_industry` | screened_addon | pass; AR 22.21%, SR 2.108, ICIR 2.304, coverage 0.944; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_amihud_illiq_10_industry_metrics.csv` | Added for the low-correlation target. Formula: industry-ranked 10-day Amihud-style illiquidity. |
+| `factor_add3_turnover_weighted_reversal_20_industry` | `factor_add3_turnover_weighted_reversal_20_industry` | screened_addon | pass; AR 20.17%, SR 2.123, ICIR 2.360, coverage 0.938; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_turnover_weighted_reversal_20_industry_metrics.csv` | Added for the low-correlation target. Direction-adjusted industry-ranked 20-day turnover-weighted return reversal. |
+| `factor_add3_f18_decay90_industry` | `factor_add3_f18_decay90_industry` | screened_addon | pass; AR 15.96%, SR 2.094, ICIR 2.175, coverage 0.949; metrics: `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_f18_decay90_industry_metrics.csv` | Added for the low-correlation target. Industry-ranked f18 variant with slower 90-day VROC decay. |
 
 ## AR/SR-Qualified Stage-2 Deliverables
 
@@ -113,6 +123,7 @@ conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --
 
 | Registry key | Construction | AR | SR | ICIR | Coverage | Metrics | Reproduce command |
 |---|---|---:|---:|---:|---:|---|---|
+| `factor_add_06_quality_x_flow` | `pn_Rank(NetProfitTTMQ1 / NetAssetQ1) * pn_Rank(ts_Sum(net_mf_amount, 20))` | 16.25% | 2.008 | 1.797 | 0.917 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add_06_quality_x_flow_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add_06_quality_x_flow --ls-method sign_weight` |
 | `factor_opt_01_residual_volatility_w5` | `factor_01_residual_volatility(window=5)` | 32.67% | 2.881 | 2.899 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_01_residual_volatility_w5_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_01_residual_volatility_w5 --ls-method sign_weight` |
 | `factor_opt_01_residual_volatility_w10` | `factor_01_residual_volatility(window=10)` | 30.15% | 2.536 | 2.500 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_01_residual_volatility_w10_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_01_residual_volatility_w10 --ls-method sign_weight` |
 | `factor_opt_05_volume_price_divergence_cov_1_20` | `factor_05_volume_price_divergence_cov(delta_window=1, cov_window=20)` | 26.64% | 2.104 | 2.057 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_05_volume_price_divergence_cov_1_20_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_05_volume_price_divergence_cov_1_20 --ls-method sign_weight` |
@@ -123,6 +134,30 @@ conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --
 | `factor_opt_34_reverse_vroc_rank_vol_cov_5_20` | `factor_34_reverse_vroc_rank_vol_cov(rank_vol_window=5, cov_window=20)` | 16.82% | 2.345 | 2.312 | 0.940 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_34_reverse_vroc_rank_vol_cov_5_20_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_34_reverse_vroc_rank_vol_cov_5_20 --ls-method sign_weight` |
 | `factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5` | `factor_47_nonlinear_volume_price_extreme_reversal(poly_window=30, kurt_window=30, kurt_top_window=5)` | 19.04% | 2.132 | 2.333 | 0.943 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5 --ls-method sign_weight` |
 | `factor_opt_54_industry_fund_quality_reverse_inv` | `-factor_54_industry_fund_quality_reverse()` | 10.75% | 2.085 | 2.029 | 0.944 | `group_work/02_factor_calculation/outputs/sign_weight/factor_opt_54_industry_fund_quality_reverse_inv_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_opt_54_industry_fund_quality_reverse_inv --ls-method sign_weight` |
+| `factor_add2_adj_05_f34_15_25_industry` | `pn_GroupRank(factor_34_reverse_vroc_rank_vol_cov(rank_vol_window=15, cov_window=25), hy)` | 11.56% | 2.026 | 1.939 | 0.940 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add2_adj_05_f34_15_25_industry_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add2_adj_05_f34_15_25_industry --ls-method sign_weight` |
+| `factor_add2_adj_07_f18_decay30_industry` | `pn_GroupRank(factor_18_price_volume_decay_synergy(rank_window=10, vroc_window=12, decay_window=30), hy)` | 15.28% | 2.007 | 2.173 | 0.949 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add2_adj_07_f18_decay30_industry_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add2_adj_07_f18_decay30_industry --ls-method sign_weight` |
+| `factor_add2_adj_04_f34_10_30_industry` | `pn_GroupRank(factor_34_reverse_vroc_rank_vol_cov(rank_vol_window=10, cov_window=30), hy)` | 11.87% | 2.006 | 1.870 | 0.938 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add2_adj_04_f34_10_30_industry_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add2_adj_04_f34_10_30_industry --ls-method sign_weight` |
+| `factor_add3_gap_down_3` | `3-day sum of negative overnight gap events` | 49.71% | 3.251 | 2.947 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_gap_down_3_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add3_gap_down_3 --ls-method sign_weight` |
+| `factor_add3_overnight_reversal_3_industry_inv` | `-pn_GroupRank(-ts_Mean(overnightRet, 3), hy)` | 15.15% | 2.643 | 2.696 | 0.947 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_overnight_reversal_3_industry_inv_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add3_overnight_reversal_3_industry_inv --ls-method sign_weight` |
+| `factor_add3_intraday_hml_vol_120_industry_inv` | `-pn_GroupRank(ts_Stdev(adj_high / delay(adj_close) - 1, 120) - ts_Stdev(adj_low / delay(adj_close) - 1, 120), hy)` | 18.57% | 2.605 | 2.724 | 1.000 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_intraday_hml_vol_120_industry_inv_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add3_intraday_hml_vol_120_industry_inv --ls-method sign_weight` |
+| `factor_add3_amihud_illiq_10_industry` | `pn_GroupRank(ts_Mean(abs(totalRet) / amount, 10), hy)` | 22.21% | 2.108 | 2.304 | 0.944 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_amihud_illiq_10_industry_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add3_amihud_illiq_10_industry --ls-method sign_weight` |
+| `factor_add3_turnover_weighted_reversal_20_industry` | `-pn_GroupRank(ts_Sum(totalRet * turnover_rate, 20) / ts_Sum(turnover_rate, 20), hy)` | 20.17% | 2.123 | 2.360 | 0.938 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_turnover_weighted_reversal_20_industry_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add3_turnover_weighted_reversal_20_industry --ls-method sign_weight` |
+| `factor_add3_f18_decay90_industry` | `pn_GroupRank(factor_18_price_volume_decay_synergy(rank_window=10, vroc_window=12, decay_window=90), hy)` | 15.96% | 2.094 | 2.175 | 0.949 | `group_work/02_factor_calculation/outputs/sign_weight/factor_add3_f18_decay90_industry_metrics.csv` | `conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --factor factor_add3_f18_decay90_industry --ls-method sign_weight` |
+
+## Correlation Check
+
+Run command:
+
+```powershell
+conda run -n bishe python group_work\02_factor_calculation\screening_results\calc_corr_14_passed.py
+```
+
+Result on 2026-05-24: 20 AR/SR-qualified factors, 156 / 190 pairs with `abs(corr) < 0.3`, and maximum all-pairs-low-correlation subset size 11. Outputs:
+
+- `group_work/02_factor_calculation/screening_results/corr_20_passed_factors.csv`
+- `group_work/02_factor_calculation/screening_results/abs_corr_20_passed_factors.csv`
+- `group_work/02_factor_calculation/screening_results/corr_pairs_20_passed_factors.csv`
+- `group_work/02_factor_calculation/screening_results/max_low_corr_sets_20_passed_factors.csv`
 
 ## Work Log
 
@@ -138,3 +173,8 @@ conda run -n bishe python group_work\02_factor_calculation\evaluate_factor.py --
 - 2026-05-23: Registered 10 optimized stage-2 variants as `factor_opt_*` wrapper keys in `group_work/factor_lib/factors.py` so each target factor can be reproduced by a normal `evaluate_factor.py --factor <key>` command.
 - 2026-05-23: Ran `py_compile` for `factors.py`, `feature.py`, `custom_operators.py`, and `evaluate_factor.py`; passed.
 - 2026-05-23: Validated all 10 optimized keys in one `bishe` Python process via `evaluate_factor(...)` and `save_outputs(...)`; all meet AR > 10% and SR > 2 under `sign_weight`.
+- 2026-05-23: Migrated 3 `factor_add2_*` industry-neutral add-on factors from the `main` branch `group_work/factor_add_new/` experiment into `group_work/factor_lib/factors.py`, documented them, and validated each with `evaluate_factor.py --ls-method sign_weight`; all meet AR > 10% and SR > 2.
+- 2026-05-23: Added `group_work/02_factor_calculation/screening_results/calc_corr_14_passed.py` for the 14 AR/SR-qualified factors, wrote `corr_14_passed_factors.csv`, `abs_corr_14_passed_factors.csv`, and `corr_pairs_14_passed_factors.csv`; 69 of 91 pairs have `abs(corr) < 0.3`.
+- 2026-05-24: Screened low-correlation candidate families covering gap, overnight, intraday volatility spread, Amihud illiquidity, turnover-weighted reversal, and slower f18 decay; selected 6 `factor_add3_*` keys for formal registration.
+- 2026-05-24: Validated all 6 `factor_add3_*` keys with `evaluate_factor.py --ls-method sign_weight`; all meet AR > 10% and SR > 2.
+- 2026-05-24: Expanded `calc_corr_14_passed.py` to the 20 AR/SR-qualified keys and added maximum low-correlation set output; current result finds an 11-factor subset with pairwise `abs(corr) < 0.3`.

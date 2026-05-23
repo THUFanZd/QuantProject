@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,end_date,delay,listed_days,ls_method,quantile,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_add2_adj_07_f18_decay30_industry,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2025-02-03,2,20,sign_weight,,2111,0.949,0.1527699766949272,2.007258442282062,0.035538085531687816,1.0269824993049832,0.11723189116323941,2.4972205615568184,0.010000751443578305,2.1726720552267262

@@ -1121,6 +1121,96 @@ def factor_opt_54_industry_fund_quality_reverse_inv(
     return -factor_54_industry_fund_quality_reverse(dt)
 
 
+def factor_add2_adj_05_f34_15_25_industry(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Screened industry-neutral f34 variant using 15-day rank volatility and 25-day covariance."""
+
+    raw = factor_34_reverse_vroc_rank_vol_cov(dt, rank_vol_window=15, cov_window=25)
+    return pn_GroupRank(raw, _require_field(dt, "hy"))
+
+
+def factor_add2_adj_07_f18_decay30_industry(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Screened industry-neutral f18 variant using a 30-day volume-change decay."""
+
+    raw = factor_18_price_volume_decay_synergy(dt, rank_window=10, vroc_window=12, decay_window=30)
+    return pn_GroupRank(raw, _require_field(dt, "hy"))
+
+
+def factor_add2_adj_04_f34_10_30_industry(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Screened industry-neutral f34 variant using 10-day rank volatility and 30-day covariance."""
+
+    raw = factor_34_reverse_vroc_rank_vol_cov(dt, rank_vol_window=10, cov_window=30)
+    return pn_GroupRank(raw, _require_field(dt, "hy"))
+
+
+def factor_add3_amihud_illiq_10_industry(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Industry-ranked 10-day Amihud-style illiquidity factor."""
+
+    illiq = ts_Mean(safe_div(Abs(_require_field(dt, "totalRet")), _require_field(dt, "amount").replace(0, np.nan)), 10)
+    return pn_GroupRank(illiq, _require_field(dt, "hy"))
+
+
+def factor_add3_gap_down_3(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Three-day sum of negative overnight gap events."""
+
+    high_px = _require_field(dt, "high")
+    low_px = _require_field(dt, "low")
+    prev_low = ts_Delay(low_px, 1)
+    gap_down = safe_div(high_px - prev_low, prev_low).where(high_px < prev_low, 0)
+    return ts_Sum(gap_down, 3)
+
+
+def factor_add3_intraday_hml_vol_120_industry_inv(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Direction-adjusted industry-ranked spread between upside and downside intraday volatility."""
+
+    adj_close = _require_field(dt, "adj_close")
+    high_ret = safe_div(_require_field(dt, "adj_high"), ts_Delay(adj_close, 1)) - 1
+    low_ret = safe_div(_require_field(dt, "adj_low"), ts_Delay(adj_close, 1)) - 1
+    hml_vol = ts_Stdev(high_ret, 120) - ts_Stdev(low_ret, 120)
+    return -pn_GroupRank(hml_vol, _require_field(dt, "hy"))
+
+
+def factor_add3_overnight_reversal_3_industry_inv(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Direction-adjusted industry-ranked short-window overnight-return reversal."""
+
+    raw = -ts_Mean(_require_field(dt, "overnightRet"), 3)
+    return -pn_GroupRank(raw, _require_field(dt, "hy"))
+
+
+def factor_add3_turnover_weighted_reversal_20_industry(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Direction-adjusted industry-ranked 20-day turnover-weighted return reversal."""
+
+    weighted_ret = safe_div(
+        ts_Sum(_require_field(dt, "totalRet") * _turn_rate(dt), 20),
+        ts_Sum(_turn_rate(dt), 20),
+    )
+    return -pn_GroupRank(weighted_ret, _require_field(dt, "hy"))
+
+
+def factor_add3_f18_decay90_industry(
+    dt: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Industry-neutral f18 variant using a slower 90-day volume-change decay."""
+
+    raw = factor_18_price_volume_decay_synergy(dt, rank_window=10, vroc_window=12, decay_window=90)
+    return pn_GroupRank(raw, _require_field(dt, "hy"))
+
+
 def factor_55_industry_ma_value_proxy(
     dt: dict[str, pd.DataFrame],
 ) -> pd.DataFrame:
@@ -1220,5 +1310,14 @@ FACTOR_REGISTRY.update({
     "factor_opt_34_reverse_vroc_rank_vol_cov_5_20": factor_opt_34_reverse_vroc_rank_vol_cov_5_20,
     "factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5": factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5,
     "factor_opt_54_industry_fund_quality_reverse_inv": factor_opt_54_industry_fund_quality_reverse_inv,
+    "factor_add2_adj_05_f34_15_25_industry": factor_add2_adj_05_f34_15_25_industry,
+    "factor_add2_adj_07_f18_decay30_industry": factor_add2_adj_07_f18_decay30_industry,
+    "factor_add2_adj_04_f34_10_30_industry": factor_add2_adj_04_f34_10_30_industry,
+    "factor_add3_amihud_illiq_10_industry": factor_add3_amihud_illiq_10_industry,
+    "factor_add3_gap_down_3": factor_add3_gap_down_3,
+    "factor_add3_intraday_hml_vol_120_industry_inv": factor_add3_intraday_hml_vol_120_industry_inv,
+    "factor_add3_overnight_reversal_3_industry_inv": factor_add3_overnight_reversal_3_industry_inv,
+    "factor_add3_turnover_weighted_reversal_20_industry": factor_add3_turnover_weighted_reversal_20_industry,
+    "factor_add3_f18_decay90_industry": factor_add3_f18_decay90_industry,
     "factor_55_industry_ma_value_proxy": factor_55_industry_ma_value_proxy,
 })

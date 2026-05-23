@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,end_date,delay,listed_days,ls_method,quantile,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_add3_intraday_hml_vol_120_industry_inv,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2025-02-03,2,20,sign_weight,,2111,1.0,0.18574228609329954,2.6054284298849986,0.06877062207423035,1.8698620596362383,0.11697166401906921,2.9679541769294415,0.011680923853815849,2.7238493789302582

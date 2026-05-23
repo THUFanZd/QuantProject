@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,end_date,delay,listed_days,ls_method,quantile,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_add3_amihud_illiq_10_industry,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2025-02-03,2,20,sign_weight,,2111,0.944,0.22211905687276928,2.1079228469510594,0.09609143318624241,1.8581624214679549,0.1260276236865269,2.173599250521607,0.014665897393962724,2.304284729507754

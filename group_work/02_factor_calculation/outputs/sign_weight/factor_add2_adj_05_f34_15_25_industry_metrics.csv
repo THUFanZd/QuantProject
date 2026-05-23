@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,end_date,delay,listed_days,ls_method,quantile,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_add2_adj_05_f34_15_25_industry,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2025-02-03,2,20,sign_weight,,2111,0.94,0.11563634553577926,2.0257684650231993,0.031861687708409886,1.2913581623594068,0.08377465782736938,1.9547983350219857,0.007031291755756435,1.9394166256285417
