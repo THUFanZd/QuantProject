@@ -1,0 +1,2 @@
+﻿factor,data_root,start_date,end_date,delay,listed_days,ls_method,quantile,n_days,latest_coverage,ls_ar,ls_sr,long_excess_ar,long_excess_sr,short_excess_ar,short_excess_sr,ic_mean,ic_ir
+factor_01_residual_volatility,C:\Users\lzx\Desktop\研一下\量化\Project\data_1800\stock1000\data,2017-01-01,2025-02-03,2,20,top_bottom,0.3,2111,1.0,0.26597922523089046,2.2432083125404336,0.10686451687089034,2.000315636764466,0.15911470836000013,2.3043738112674688,0.01702941894823934,2.2768366823839963

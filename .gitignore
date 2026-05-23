@@ -1,5 +1,4 @@
 .claude/
-__pycache__/
 extract_*.py
 rollout-*
 final_extract.py

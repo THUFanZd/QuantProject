@@ -162,12 +162,12 @@ group_work\03_factor_screening\stage2_factor_screening.py
 - `custom_operators.py` 是文档/第一阶段支持。运行时评估从 `code/stock1800/feature.py` 导入算子。
 - `factor_38_volatility_difference_proxy` 明确是代理，因为原始字段 `FACTOR_VOL60D` 和 `FACTOR_TVSD20D` 在本地检出中不直接存在。
 - 部分因子使用代理字段，如从 `vol` 和 `float_share` 构建的换手率，或如 `net_mf_amount` 的资金流替代。
-- `evaluate_factor.py` 是本地验证/评估工具。它支持第二阶段证据，但对于第一阶段，核心交付物是公式和算子。
+- `evaluate_factor.py` 是本地验证/评估工具。主要作用是，验证第一阶段的公式和算子能够正常运行。
 - 项目有许多生成的数据文件和输出产物。除非为特定问题所需，否则不要加载大型数据或 PDF。
 
 ## 未来代理快速决策规则
 
-- 如果被问"这个因子公式/字段/是否 proxy"：先读 `factor_formulas.md`。
+- 如果被问"这个因子公式/字段"：先读 `factor_formulas.md`。
 - 如果被问"这个因子怎么实现"：读 `group_work/factor_lib/factors.py`。
 - 如果被问"为什么跑不通/字段缺失/mask 很多"：读 `data_loader.py`，然后读具体因子函数。
 - 如果被问"这个因子效果如何"：读 `group_work/02_factor_calculation/outputs/` 中的对应文件。
