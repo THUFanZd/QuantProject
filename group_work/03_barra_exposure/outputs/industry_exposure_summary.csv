@@ -1,0 +1,11 @@
+﻿factor,industry_dispersion,top_abs_industry,top_abs_industry_exposure
+factor_add3_turnover_weighted_reversal_20_industry,0.4873303672164455,银行(801780),-2.385268112275544
+factor_add3_overnight_reversal_3_industry_inv,0.4830814061470173,银行(801780),-2.393207644597827
+factor_add3_f18_decay90_industry,0.4496180629770667,银行(801780),2.1312308753318985
+factor_add2_adj_05_f34_15_25_industry,0.4463324024928595,银行(801780),2.1311335831373754
+factor_add3_intraday_hml_vol_120_industry_inv,0.44250345919999595,银行(801780),-2.4014436658571316
+factor_opt_13_main_fund_stability_w5,0.2899013568254024,纺织服饰(801130),0.7249990738267006
+factor_add_06_quality_x_flow,0.21491563133227648,钢铁(801040),0.4294222778406935
+factor_opt_33_reinstatement_residual_vol_ratio_40_20,0.18770021724484048,综合(801230),-0.7007961462657785
+factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5,0.15989412355859528,纺织服饰(801130),0.3792383578982789
+factor_add3_gap_down_3,0.016433996816159903,有色金属(801050),-0.07618217401035303
