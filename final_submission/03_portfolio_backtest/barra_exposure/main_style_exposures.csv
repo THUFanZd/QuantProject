@@ -1,0 +1,11 @@
+﻿factor,main_style_exposure,max_abs_style_corr
+factor_add3_gap_down_3,无显著单一风格暴露(|corr|<=0.4),0.08145784491317186
+factor_opt_13_main_fund_stability_w5,Liquidity-0.54; Size-0.45; NLS-0.43,0.5448472244011889
+factor_add3_turnover_weighted_reversal_20_industry,无显著单一风格暴露(|corr|<=0.4),0.12505311703254904
+factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5,无显著单一风格暴露(|corr|<=0.4),0.17746027253114788
+factor_add3_intraday_hml_vol_120_industry_inv,无显著单一风格暴露(|corr|<=0.4),0.3176465611434147
+factor_opt_33_reinstatement_residual_vol_ratio_40_20,无显著单一风格暴露(|corr|<=0.4),0.17320935548912691
+factor_add_06_quality_x_flow,无显著单一风格暴露(|corr|<=0.4),0.3397438118409752
+factor_add3_f18_decay90_industry,无显著单一风格暴露(|corr|<=0.4),0.17670372454795785
+factor_add3_overnight_reversal_3_industry_inv,无显著单一风格暴露(|corr|<=0.4),0.1237321236828096
+factor_add2_adj_05_f34_15_25_industry,无显著单一风格暴露(|corr|<=0.4),0.12780452551285798

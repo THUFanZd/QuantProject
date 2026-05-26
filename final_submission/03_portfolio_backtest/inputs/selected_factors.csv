@@ -1,0 +1,11 @@
+factor_key,display_name,selection_bucket,notes
+factor_add3_gap_down_3,Gap-down reversal add-on,final_10,Low-correlation factor with strong long-short AR/SR in stage 2.
+factor_opt_13_main_fund_stability_w5,Main fund stability w5,final_10,Optimized short-window main-fund stability factor.
+factor_add3_turnover_weighted_reversal_20_industry,Turnover-weighted reversal industry rank,final_10,Industry-ranked turnover-weighted reversal factor.
+factor_opt_47_nonlinear_volume_price_extreme_reversal_30_30_5,Nonlinear volume-price extreme reversal 30/30/5,final_10,Optimized nonlinear volume-price reversal factor.
+factor_add3_intraday_hml_vol_120_industry_inv,Intraday high-low volatility spread industry inverse,final_10,Direction-adjusted industry-ranked intraday volatility spread.
+factor_opt_33_reinstatement_residual_vol_ratio_40_20,Reinstatement residual volatility ratio 40/20,final_10,Optimized residual-volatility ratio factor.
+factor_add_06_quality_x_flow,Profitability quality x main fund flow,final_10,Profitability quality crossed with main fund flow.
+factor_add3_f18_decay90_industry,Price-volume decay synergy industry rank 90,final_10,Industry-neutral slow decay price-volume synergy factor.
+factor_add3_overnight_reversal_3_industry_inv,Overnight reversal industry inverse,final_10,Direction-adjusted industry-ranked overnight reversal.
+factor_add2_adj_05_f34_15_25_industry,Reverse VROC rank-vol covariance industry 15/25,final_10,Industry-neutral f34 optimized add-on factor.
